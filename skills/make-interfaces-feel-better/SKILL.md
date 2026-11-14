@@ -19,8 +19,6 @@ Read only the relevant reference:
 
 Use the reference defaults for the relevant design decision. Preserve existing tokens and accessibility requirements; explain a necessary deviation instead of silently replacing the guidance. Preserve clear focus indicators, legibility, target separation, and static feedback. Motion must not delay frequent work.
 
-For physical gesture design, use `apple-design` when available; do not require it for ordinary typography or spacing work.
-
 Report actionable findings with location, user impact, and a concrete correction. State what was inspected and tested. Do not invent rejected candidates, fill a finding quota, or block a useful change on optional cosmetic preferences. When implementing, verify the changed states and report any remaining limitation.
 
 ## Core principles and common mistakes

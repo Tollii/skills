@@ -45,7 +45,6 @@ npx skills add Tollii/skills
 
 | Skill | What it does |
 |---|---|
-| [apple-design](skills/apple-design) | Design or review Apple-style interfaces: navigation, gestures, materials, typography, accessibility. |
 | [make-interfaces-feel-better](skills/make-interfaces-feel-better) | Refine UI consistency, typography, surfaces, icons and feedback within an existing design system. |
 
 ### Workflow
@@ -62,7 +61,6 @@ npx skills add Tollii/skills
 My own skills are MIT licensed (see [LICENSE](LICENSE)). These come from other people's MIT-licensed
 work, most of them rewritten to fit how I use them; each folder keeps its original license:
 
-- **apple-design**: [emilkowalski/skills](https://github.com/emilkowalski/skills), © Emil Kowalski
 - **make-interfaces-feel-better**: [jakubkrehel/make-interfaces-feel-better](https://github.com/jakubkrehel/make-interfaces-feel-better), © Jakub Krehel
 - **file-pr**: merged with [Matt Pocock](https://github.com/mattpocock)'s [`pr`](https://github.com/mattpocock/skills/tree/main/skills/engineering/pr) skill, © Matt Pocock (see its CREDITS.md)
 - **statechart**: [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan ([@poteto](https://x.com/poteto)), unchanged
