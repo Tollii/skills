@@ -32,6 +32,8 @@ npx skills add Tollii/skills
 | [mock-roles-not-objects](skills/mock-roles-not-objects) | Design app-owned collaborator roles and focused interaction tests at adapters and third-party boundaries. |
 | [residuality](skills/residuality) | Residual analysis after Barry O'Reilly's Residuality Theory: stress a naive architecture with random stressors, find attractors, keep what survives. |
 | [contagion-analysis](skills/contagion-analysis) | Incidence- and dependency-matrix coupling analysis: where one external fact breaks several parts, and whether a change adds coupling. |
+| [statechart](skills/statechart) | Check a TLA+ model of a system that moves between states and draw it as a Mermaid statechart, with the shortest path to each state that breaks a rule. Runs only when asked. |
+| [logging-best-practices](skills/logging-best-practices) | Logging built on wide events (canonical log lines): high-cardinality context, one logger, middleware-based setup. Runs only when asked. |
 
 ### Code review and quality
 
@@ -59,16 +61,12 @@ npx skills add Tollii/skills
 
 ## Credits and licenses
 
-My own skills are MIT licensed (see [LICENSE](LICENSE)). These are adapted from other people's
-MIT-licensed work, rewritten to fit how I use them; each folder keeps its original license:
+My own skills are MIT licensed (see [LICENSE](LICENSE)). These come from other people's MIT-licensed
+work, most of them rewritten to fit how I use them; each folder keeps its original license:
 
 - **apple-design**: [emilkowalski/skills](https://github.com/emilkowalski/skills), © Emil Kowalski
 - **improve**: [shadcn/improve](https://github.com/shadcn/improve), © shadcn
 - **make-interfaces-feel-better**: [jakubkrehel/make-interfaces-feel-better](https://github.com/jakubkrehel/make-interfaces-feel-better), © Jakub Krehel
 - **codebase-memory**: [DeusData/codebase-memory-mcp](https://github.com/DeusData/codebase-memory-mcp), © DeusData
-
-I also use these, which aren't included here because their repositories have no license. Install them
-from the source:
-
-- `statechart` and `maintain-formal-verification-skill`: [cursor/plugins](https://github.com/cursor/plugins)
-- `logging-best-practices`: [boristane/agent-skills](https://github.com/boristane/agent-skills)
+- **statechart**: [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan ([@poteto](https://x.com/poteto)), unchanged
+- **logging-best-practices**: [boristane/agent-skills](https://github.com/boristane/agent-skills), © Boris Tane
