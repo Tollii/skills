@@ -35,7 +35,6 @@ npx skills add Tollii/skills
 | [statechart](skills/statechart) | Check a TLA+ model of a system that moves between states and draw it as a Mermaid statechart, with the shortest path to each state that breaks a rule. Runs only when asked. |
 | [logging-best-practices](skills/logging-best-practices) | Logging built on wide events (canonical log lines): high-cardinality context, one logger, middleware-based setup. Runs only when asked. |
 
-
 ### UI
 
 | Skill | What it does |
