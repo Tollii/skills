@@ -1,0 +1,74 @@
+# Skills
+
+Agent skills I use with Claude Code, Codex and other coding agents. Each folder in `skills/` is one
+skill: a `SKILL.md` plus any references or assets it reads.
+
+Skills work best per project, not loaded globally into every session. Add the ones a project needs.
+
+## Install
+
+Copy a skill into a project:
+
+```sh
+git clone https://github.com/Tollii/skills
+mkdir -p your-project/.agents/skills your-project/.claude/skills
+cp -r skills/skills/type-design your-project/.agents/skills/
+ln -s ../../.agents/skills/type-design your-project/.claude/skills/type-design   # Claude Code
+```
+
+Or use the [skills CLI](https://github.com/vercel-labs/skills), which lets you pick from the list:
+
+```sh
+npx skills add Tollii/skills
+```
+
+## Skills
+
+### Design and architecture
+
+| Skill | What it does |
+|---|---|
+| [type-design](skills/type-design) | Give each responsibility a type whose shape makes the wrong state impossible: lifecycles as discriminated unions, parse once at the boundary, typed failures. |
+| [mock-roles-not-objects](skills/mock-roles-not-objects) | Design app-owned collaborator roles and focused interaction tests at adapters and third-party boundaries. |
+| [residuality](skills/residuality) | Residual analysis after Barry O'Reilly's Residuality Theory: stress a naive architecture with random stressors, find attractors, keep what survives. |
+| [contagion-analysis](skills/contagion-analysis) | Incidence- and dependency-matrix coupling analysis: where one external fact breaks several parts, and whether a change adds coupling. |
+
+### Code review and quality
+
+| Skill | What it does |
+|---|---|
+| [thermo-nuclear-code-quality-review](skills/thermo-nuclear-code-quality-review) | A strict maintainability gate for a change: structure, responsibility boundaries, type contracts, branching, file growth. Runs only when asked. |
+| [improve](skills/improve) | Assess a codebase and produce prioritized findings or an implementation plan. |
+| [codebase-memory](skills/codebase-memory) | Use [codebase-memory-mcp](https://github.com/DeusData/codebase-memory-mcp)'s indexed search and call graphs to find symbols and assess change impact. |
+
+### UI
+
+| Skill | What it does |
+|---|---|
+| [apple-design](skills/apple-design) | Design or review Apple-style interfaces: navigation, gestures, materials, typography, accessibility. |
+| [make-interfaces-feel-better](skills/make-interfaces-feel-better) | Refine UI consistency, typography, surfaces, icons and feedback within an existing design system. |
+
+### Workflow
+
+| Skill | What it does |
+|---|---|
+| [file-pr](skills/file-pr) | File a concise pull request. |
+| [show-me](skills/show-me) | Explain the current topic with a diagram, code sketch or small HTML page when a visual helps. |
+
+`shared/design-principles.md` is a general design reference some of these skills draw on.
+
+## Credits and licenses
+
+My own skills are MIT licensed (see [LICENSE](LICENSE)). These are adapted from other people's
+MIT-licensed work, rewritten to fit how I use them; each folder keeps its original license:
+
+- **apple-design**: [emilkowalski/skills](https://github.com/emilkowalski/skills), © Emil Kowalski
+- **improve**: [shadcn/improve](https://github.com/shadcn/improve), © shadcn
+- **make-interfaces-feel-better**: [jakubkrehel/make-interfaces-feel-better](https://github.com/jakubkrehel/make-interfaces-feel-better), © Jakub Krehel
+- **codebase-memory**: [DeusData/codebase-memory-mcp](https://github.com/DeusData/codebase-memory-mcp), © DeusData
+
+I also use these, which aren't included here because their repositories have no license. Install them
+from the source:
+
+- `statechart` and `maintain-formal-verification-skill`: [cursor/plugins](https://github.com/cursor/plugins)
+- `logging-best-practices`: [boristane/agent-skills](https://github.com/boristane/agent-skills)

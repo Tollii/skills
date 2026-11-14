@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mock Roles Not Objects"
+  short_description: "Design seams and interaction tests from collaborator roles"
+  default_prompt: "Use $mock-roles-not-objects to design or review collaborator roles, seams, wrappers, and interaction tests."
