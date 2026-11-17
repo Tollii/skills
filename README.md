@@ -34,6 +34,12 @@ npx skills add Tollii/skills
 | [contagion-analysis](skills/contagion-analysis) | Incidence- and dependency-matrix coupling analysis: where one external fact breaks several parts, and whether a change adds coupling. |
 | [statechart](skills/statechart) | Check a TLA+ model of a system that moves between states and draw it as a Mermaid statechart, with the shortest path to each state that breaks a rule. Runs only when asked. |
 
+### Testing
+
+| Skill | What it does |
+|---|---|
+| [test-audit](skills/test-audit) | Keep tests that prove behavior and cut the rest: an authoring gate for new tests, junk patterns, a retention bar, and an evidence-first workflow for pruning a suite or a whole subsystem. |
+
 ### Observability
 
 | Skill | What it does |
@@ -64,4 +70,5 @@ work, most of them rewritten to fit how I use them; each folder keeps its origin
 - **make-interfaces-feel-better**: [jakubkrehel/make-interfaces-feel-better](https://github.com/jakubkrehel/make-interfaces-feel-better), © Jakub Krehel
 - **file-pr**: merged with [Matt Pocock](https://github.com/mattpocock)'s [`pr`](https://github.com/mattpocock/skills/tree/main/skills/engineering/pr) skill, © Matt Pocock (see its CREDITS.md)
 - **statechart**: [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan ([@poteto](https://x.com/poteto)), unchanged
+- **test-audit**: [openclaw/openclaw](https://github.com/openclaw/openclaw/tree/main/.agents/skills/test-audit), © OpenClaw Foundation, rewritten to work in any project
 - **logging-best-practices**: [boristane/agent-skills](https://github.com/boristane/agent-skills), © Boris Tane. `observability` embeds an unchanged copy in `vendor/`.
