@@ -76,12 +76,12 @@ Allow an opt-out comment that must give a reason, for the rare function that sho
 
 ### 9. Sampling
 
-Decide it in PR 1 and write it in the conventions doc. The default is tail sampling with the rules in [wide-events.md](wide-events.md#sampling): keep every error, every slow request and every VIP or flagged one, plus a random share of the rest (1–5% at scale, 100% at low volume).
+Decide it in PR 1 and write it in the conventions doc.
 
-- **Where it runs:** an OpenTelemetry Collector with the `tail_sampling` processor, or a backend that samples by outcome. SDK samplers decide when a request starts, before its outcome is known, so they drop errors at the same rate as successes; use them only where no collector can run.
-- **Services keep every span** (`OTEL_TRACES_SAMPLER=parentbased_always_on`), so the collector sees whole traces and a trace is kept or dropped whole. Set it through env vars, not code.
+- **Default: keep every trace,** with `OTEL_TRACES_SAMPLER=parentbased_always_on` set explicitly through env vars, not code. Do not rely on a vendor distro's default: Azure Monitor's samples at five traces per second unless told otherwise (see [backend.md](backend.md#azure-monitor-and-application-insights)).
+- **When volume or cost calls for sampling,** use tail sampling with one decider, as [wide-events.md](wide-events.md#sampling) describes: the service owning the root span marks it `sampling.keep`, and a Collector keeps the marked traces plus any with an error. Services keep exporting every span. SDK ratio samplers decide before the outcome is known and drop errors at the same rate as successes; use them only where no Collector can run, and say so.
+- **Counts:** once sampling is on, request and error rates come from metrics, not from counting kept spans.
 - **Clients** usually send a smaller share of healthy sessions. The server follows the client's decision through `traceparent`, so set the client's share deliberately.
-- **On the event:** `trace_sampled` next to `trace_id`, and `sample_rate`, so an event whose trace is missing says why and counts can be scaled back up.
 
 ## Prove it works
 

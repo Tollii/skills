@@ -209,7 +209,6 @@ public sealed class WideEventMiddleware(RequestDelegate next, ILogger<WideEventM
         var state = RequestContext.Begin(root);
         state.Event["trace_id"] = root?.TraceId.ToString();
         state.Event["span_id"] = root?.SpanId.ToString();
-        state.Event["trace_sampled"] = root?.Recorded ?? false;
         RequestContext.Set("request.id", http.TraceIdentifier);
         var started = Stopwatch.GetTimestamp();
         var escaped = false;
@@ -238,8 +237,10 @@ public sealed class WideEventMiddleware(RequestDelegate next, ILogger<WideEventM
             // A list of key-value pairs as the state is written as fields by the JSON
             // console formatter and by Serilog; check the project's provider does too.
             // ToArray() on a ConcurrentDictionary is a consistent snapshot; LINQ's ToList() is not.
-            // With a logged event, apply the tail-sampling rule here (references/wide-events.md#sampling).
-            // When the root span is the event, skip this line: the root span already holds every field.
+            // Sampling, when on: decide here and set sampling.keep and sample_rate on root
+            // (references/wide-events.md#sampling).
+            // Root span as the event (the default): stop here; the root span holds every field.
+            // Logged event: write it, only when sampling.keep is true.
             logger.Log(LogLevel.Information, default, state.Event.ToArray(), null, (_, _) => "request");
         }
     }

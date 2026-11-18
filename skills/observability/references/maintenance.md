@@ -31,7 +31,7 @@ Do not use the date the helper or its lint rule last changed. They change for un
    - New fields follow the schema, and none of them holds personal data or secrets.
    - New feature flags are recorded on the event.
    - Opt-out comments still have reasons that hold.
-   - The sampling decision still fits the volume and the bill.
+   - The sampling decision still fits the volume and the bill; if sampling is on, counts come from metrics and the Collector still keeps every trace marked `sampling.keep`.
    - The telemetry dependencies are current and not deprecated.
 4. **Open PRs only where something changed.** Keep the same split: tracing fixes on `observability/tracing-<date>`, logging fixes on `observability/wide-events-<date>`. Skip whichever is empty. Update `Last swept` in a PR you open.
 5. **If everything is in order, open nothing.** Report what you checked and that it held.

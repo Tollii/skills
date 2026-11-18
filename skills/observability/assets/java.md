@@ -135,7 +135,6 @@ public class WideEventFilter extends OncePerRequestFilter {
         SpanContext sc = root.getSpanContext();
         state.event().put("trace_id", sc.getTraceId());
         state.event().put("span_id", sc.getSpanId());
-        state.event().put("trace_sampled", sc.isSampled());
         long started = System.nanoTime();
         boolean escaped = false;
 
@@ -156,8 +155,10 @@ public class WideEventFilter extends OncePerRequestFilter {
 
             // SLF4J 2 key-values; a JSON encoder that writes them as fields
             // (logstash-logback-encoder 7+, or Logback's JsonEncoder) is required.
-            // With a logged event, apply the tail-sampling rule here (references/wide-events.md#sampling).
-            // When the root span is the event, skip the log line: the root span already holds every field.
+            // Sampling, when on: decide here and set sampling.keep and sample_rate on root
+            // (references/wide-events.md#sampling).
+            // Root span as the event (the default): stop here; the root span holds every field.
+            // Logged event: write it, only when sampling.keep is true.
             var event = log.atInfo();
             state.event().forEach(event::addKeyValue);
             event.log("request");

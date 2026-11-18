@@ -29,6 +29,27 @@ In this order:
 
 Pricing, free tiers and OTLP support change, so check current docs before naming one, and give the reason for the pick in a sentence.
 
+## Azure Monitor and Application Insights
+
+Application Insights fits the default design (root span as the event): server and consumer root spans become rows in `requests`, their attributes land in `customDimensions`, and KQL filters and groups by any of them. Things to know:
+
+- **Span kind decides the table.** Only `SERVER` and `CONSUMER` spans become `requests`; `INTERNAL`, `CLIENT` and `PRODUCER` spans become `dependencies`. Give the root span of a job, scheduled task or CLI command kind `SERVER` or `CONSUMER`, or its event lands among the dependencies.
+- **Limits.** Property keys up to 150 characters, values up to 8,192. Keep values short; the content rule (ids, not bodies) already does.
+- **Check, don't assume:** whether `customDimensions` values arrive as strings (then numeric fields need `todouble()` or `toint()` in KQL), and which tables native OTLP ingestion writes to, if the project uses it.
+- **The distro samples by default.** Microsoft's Azure Monitor OpenTelemetry distro samples at five traces per second in .NET, Node.js and Python, and the Java agent is rate-limited by default since 3.4.0. That drops errors as readily as successes. Set the sampler explicitly.
+- **Trace-based log sampling** drops log records whose trace was sampled out. It is on by default in .NET and Java, off in Node.js and Python. With a logged event, know which way it is set.
+
+Sampling in Application Insights, when it is needed, has two paths, and neither does everything:
+
+| | (a) The distro's sampler | (b) Collector tail sampling |
+| --- | --- | --- |
+| **How** | Distro in the app, fixed-percentage or rate-limited sampling | Vendor-neutral SDK with `parentbased_always_on`, OTLP to a Collector with `tail_sampling`, exported to Azure Monitor |
+| **Keeps every error** | No; it decides at the start of a request, and ignores upstream decisions | Yes, with the rules in [wide-events.md](wide-events.md#sampling) |
+| **Portal counts** | Correct: the distro tells Application Insights the rate, and `itemCount` scales the views | Overstated for errors: the exporter writes no rate, so `itemCount` stays 1; take counts from metrics |
+| **Support** | Microsoft's | Community: Microsoft documents outcome-based sampling as needing a downstream Collector and does not support it |
+
+Path (a) breaks this skill's vendor-neutral rule; path (b) keeps it. Without sampling, neither matters: keep every trace and the portal's counts are right. Record the path in the conventions doc.
+
 ## Local viewing
 
 Give developers a way to see traces locally from day one: a single-container OTLP viewer (Jaeger, or Grafana's `otel-lgtm` image), documented in the conventions doc.

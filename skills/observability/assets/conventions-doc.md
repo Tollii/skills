@@ -49,7 +49,7 @@ Last swept: <YYYY-MM-DD>
 
 ### Sampling
 
-<!-- Where tail sampling runs (collector or backend), the four rules with their threshold, user and flag lists and random share, the client share, and why. -->
+<!-- "Every trace is kept", set explicitly, or: the Collector that runs tail sampling, the client share, and why. On Azure Monitor, path (a) or (b) from the skill. -->
 
 ### Clients
 
@@ -67,7 +67,7 @@ Last swept: <YYYY-MM-DD>
 
 ### Sampling
 
-<!-- Point to the tracing sampling section if the root span is the event. For a logged event: where `shouldSample` lives and how it stays in step with the collector. -->
+<!-- The four rules, written down even before sampling is on: the latency threshold, the user and flag lists, the random share. Where `shouldSample` lives, and where counts come from once sampling is on (metrics, or a backend that weights by `sample_rate`). -->
 
 ## Lint baselines
 

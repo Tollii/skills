@@ -10,7 +10,7 @@ Bring a codebase to the point where any request can be explained after the fact.
 
 Tracing is this skill's own subject. The logging rules are Boris Tane's `logging-best-practices` skill, embedded verbatim in [vendor/logging-best-practices](vendor/logging-best-practices/SKILL.md); this skill applies it and ties its events to the traces.
 
-There are no separate metrics. Counts, rates and latencies come from querying wide events and spans in the backend. Add OpenTelemetry metrics only for what no unit of work carries, such as queue depth, connection-pool use or runtime memory, or where the project already has metrics and dashboards that depend on them.
+There are no separate metrics. Counts, rates and latencies come from querying wide events and spans in the backend. Add OpenTelemetry metrics only for what no unit of work carries, such as queue depth, connection-pool use or runtime memory, where the project already has metrics and dashboards that depend on them, or for request and error rates once sampling is turned on, because kept events are then no longer a full count.
 
 ## Files in this skill
 
@@ -82,7 +82,7 @@ Branch `observability/tracing` from the default branch. Build what [references/t
 
 Branch `observability/wide-events`; the reference says what to branch from while PR 1 is still open.
 
-Follow [references/wide-events.md](references/wide-events.md). First decide where the event lives: the root span, when the backend queries span attributes well, or a log record beside it, for log-first stacks. The logging itself is built from the embedded `logging-best-practices` skill, read in full. This skill adds only what that one cannot know: trace ids on the event, one `enrich()` function that writes to the event and the root span, the replacement of existing log calls, a lint rule against stray logging, and what must stay out of an event. Prove it with tests.
+Follow [references/wide-events.md](references/wide-events.md). First decide where the event lives: by default the root span is the event; a logged event beside it is the exception, for log-first backends. What the event contains comes from the embedded `logging-best-practices` skill, read in full. This skill adds only what that one cannot know: one `enrich()` function that writes to the root span (and the logged event, if there is one), the replacement of existing log calls, a lint rule against stray logging, sampling when it is needed, and what must stay out of an event. Prove it with tests.
 
 ## Step 6: the conventions doc
 
@@ -93,7 +93,7 @@ PR 1 creates it from [assets/conventions-doc.md](assets/conventions-doc.md) and 
 - **Definitions, not call sites.** A function is traced by wrapping its definition, or by opening its span as the first statement of its own body where the language has no wrapper. Spans opened mid-function or around a call drift, and no tool can tell which ones are missing.
 - **Trace what crosses a boundary.** Entry points and functions that do I/O get spans; pure computation does not. Spans cost money and attention.
 - **Vendor-neutral code.** Changing backend is a config change. With no endpoint set, the app still runs.
-- **Logging rules come from `logging-best-practices`, unmodified.** Do not paraphrase, trim or override them here, and do not edit the embedded copy.
+- **Event rules come from `logging-best-practices`, unmodified.** Do not paraphrase, trim or override them here, and do not edit the embedded copy. Its logger, JSON and level rules apply when the event is logged; when the root span is the event, they have nothing to act on.
 - **One event per unit of work.** Handlers add fields; they do not write log lines.
 - **Tests are the proof.** A clean typecheck does not show that telemetry works.
 - **No setup that looks complete and emits nothing.** If part of the system cannot be instrumented, say so in the PR and in the conventions doc.
@@ -109,7 +109,7 @@ The final message to the user gives:
 
 - The PR links.
 - The backend decision, and whether it was found in the project, chosen by them, or defaulted.
-- Where the event lives, and the tail-sampling rules.
+- Where the event lives, and whether sampling is on (with its rules) or not yet.
 - The env vars to set before telemetry flows.
 - Anything that needs their judgment: opt-outs you were unsure about, fields you left out for privacy, parts of the system that could not be instrumented.
 
