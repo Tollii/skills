@@ -42,19 +42,13 @@ Check the framework's own error handling too. A default error handler that print
 
 Browser, mobile and edge code are covered in [backend.md](backend.md#browser-mobile-and-edge): there, the client's root span is the event, and the lint rule applies to them too.
 
-## When the root span is the wide event
+## The root span is not the event
 
-Some projects make the root span itself the wide event: enrichment becomes span attributes, and nothing is written to a log. It is a recognised design, not a deviation, and when a project has chosen it (an ADR, the conventions doc), keep it. Propose it for a new project only when it fits.
+Some projects make the root span itself the wide event and write nothing to a log. This skill does not: the event is a log record, and the root span sits beside it. With the root span as the event, a request whose trace is sampled away leaves no record at all, so one specific request can no longer be looked up afterwards ("order 991 went through but no email came"), and counts for small groups become estimates. The logged event survives trace sampling and keeps both.
 
-**When it fits:** the tracing backend can filter and group by any span attribute, and traces are either not sampled or sampled where losing events is acceptable.
+When a project already uses the root span as its event (an ADR, the conventions doc), treat it like any other earlier decision that no longer fits: explain that trade-off to the user, recommend moving to a logged event, and ask before changing it. If they keep it, record the choice and its reason in the conventions doc. The rest of this file still applies, with `enrich()` writing to the root span only.
 
-**What it costs:**
-
-- **Sampled traces take their events with them.** A unit of work whose trace is dropped leaves no record at all, so counts and rates from events are only exact where nothing is sampled.
-- **The event is flat.** Span attributes cannot hold objects, so fields are dotted keys (`payment.retries`), never nested.
-- **Logging tools see nothing.** Anything that reads logs rather than traces (log-based alerts, a log archive) needs another source.
-
-**What still applies:** one unit of work, one event, enriched as the work runs and complete when the root span ends. Handlers still call one `enrich()` (it writes only to the root span), the request-context fields and the content rule below still hold, `console.*` and stray loggers are still banned, and the tests are the same with "the root span" in place of "the event". Record the choice, the sampling that affects it, and its reason in the conventions doc.
+If the backend drops log records along with sampled-out traces (Azure Monitor's trace-based log sampling, for example), turn that off for the wide-event logger, or the event no longer survives sampling.
 
 ## One addition that is not from his skill
 
