@@ -57,7 +57,7 @@ Last swept: <YYYY-MM-DD>
 
 ## Wide events
 
-<!-- Where the middleware and `enrich()` live, and which units of work emit an event. -->
+<!-- Where the middleware and `enrich()` live, and which units of work emit an event. If the root span is the wide event instead of a log line, say so here, with the reason and the sampling that affects it. -->
 
 ### Schema
 
