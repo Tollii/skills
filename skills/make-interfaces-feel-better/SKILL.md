@@ -1,6 +1,6 @@
 ---
 name: make-interfaces-feel-better
-description: "Review or refine UI consistency, typography, surfaces, icons, and feedback within the existing design system. Use for a requested visual or interaction improvement."
+description: "Polish how a UI looks and feels within the existing design system: typography, spacing and surfaces, nested border radii, icons, hit areas, state feedback and small animations. Use when building or changing UI components, when reviewing frontend code for visual quality, or when an interface feels off or unpolished. Not for creating a new design system or brand, or for a product-level UX redesign."
 ---
 
 # Interface refinement

@@ -1,7 +1,7 @@
 {
   "name": "tollii",
   "owner": { "name": "Tollii" },
-  "metadata": { "description": "Agent skills for design, testing, observability, UI and workflow." },
+  "metadata": { "description": "Agent skills for design, testing, observability, UI and motion." },
   "plugins": [
     {
       "name": "tollii",

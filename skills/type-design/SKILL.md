@@ -1,6 +1,6 @@
 ---
 name: type-design
-description: Use before writing a type, schema or contract with a `state`, `status` or `kind` field, or when state hides in optional fields, flags, sentinels or the same check repeated across callers. Gives each responsibility a type whose shape makes the wrong state impossible to write.
+description: "Design types so invalid states can't be written. Use before adding or reviewing a type, schema, DTO or API contract with a `state`, `status` or `kind` field, or when state hides in nullable fields, boolean flags, sentinels or the same check repeated across callers: discriminated unions, sum types, sealed classes, parse-don't-validate. Not for interfaces between components or for mocks; use collaborator-roles."
 ---
 
 # Type design

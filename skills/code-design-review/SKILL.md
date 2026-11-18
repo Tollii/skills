@@ -1,6 +1,6 @@
 ---
 name: code-design-review
-description: Review a diff, PR or module for code design problems that carry real risk. Treats code smells as evidence and reports only those that lead to a concrete failure or a costly next change, each with a fix or a better design. Use when asked to review a change for design, before refactoring a module, or when a change touched far more files than it should have.
+description: "Design-risk pass over a diff, PR or module, run alongside a general code review, not in place of one. Use when asked to review a change's design, before refactoring a module, or when a change touched far more files than it should. Reports a code smell only when it leads to a concrete failure or a costly next change, each with a fix or a better design. Not for correctness bugs, style or security, and not for planning a new architecture."
 ---
 
 # Code design review

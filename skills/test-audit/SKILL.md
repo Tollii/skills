@@ -1,6 +1,6 @@
 ---
 name: test-audit
-description: Keep tests that prove behavior and cut the ones that don't. Use when writing, changing or reviewing a test, and when auditing or pruning a test suite. Rejects duplicate proof, tests coupled to implementation, and production code that exists only for tests.
+description: "Decide whether a test is worth having: keep tests that prove behavior and cut the rest. Use as a gate before adding or changing a test, when reviewing the tests in a PR, and when auditing or pruning a test suite. Rejects duplicate proof, tests coupled to implementation, and production code that exists only for tests. Not a TDD workflow, and not for designing mocks or seams; use collaborator-roles for those."
 ---
 
 # Test audit

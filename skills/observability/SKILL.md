@@ -1,10 +1,7 @@
 ---
 name: observability
-description: Tracing and logging for any codebase, new or existing. OpenTelemetry tracing plus wide-event logging (one event per unit of work) across servers, browsers, mobile apps and edge workers. Use to set observability up, to bring existing tracing or logging up to standard, for a periodic maintenance pass, and for single changes such as tracing a function, fixing a log call or reviewing a diff's telemetry. Full setups land as two pull requests.
+description: "Tracing and logging for any codebase, new or existing: OpenTelemetry tracing plus wide-event logging (one event per unit of work) across servers, browsers, mobile apps and edge workers. Use to set observability up, to bring existing tracing or logging up to standard, for a periodic maintenance pass, and for single changes such as tracing a function, fixing a log call or reviewing a diff's telemetry."
 license: MIT
-metadata:
-  harness: [claude, codex]
-  platform: [darwin, linux]
 ---
 
 # Observability

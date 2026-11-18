@@ -1,6 +1,6 @@
 ---
 name: residuality
-description: Residuality Theory (Barry O'Reilly). Use to stress-test an architecture, or to check where a design, codebase or MR is coupled and whether a change adds coupling.
+description: "Residuality Theory (Barry O'Reilly). Use to stress-test an architecture with stressors and keep what survives, or for a quick contagion check: an incidence matrix of stressors against parts that shows where a design, codebase or PR (or MR) is coupled and whether a change adds coupling. Not a general code review, and not for drawing module boundaries from nothing; it stresses a design that already exists."
 ---
 
 # Residuality

@@ -48,8 +48,8 @@ its `.claude/settings.json`.
 | Skill | What it does |
 |---|---|
 | [type-design](skills/type-design) | Give each responsibility a type whose shape makes the wrong state impossible: lifecycles as discriminated unions, parse once at the boundary, typed failures. |
-| [collaborator-roles](skills/collaborator-roles) | Design the interfaces a class depends on from what it needs, wrap vendor APIs behind them, and test against them with focused mocks. After *Mock Roles, Not Objects* (Freeman, Pryce, Mackinnon, Walnes 2004). |
-| [code-design-review](skills/code-design-review) | Review a diff or module for code smells that carry real risk (double side effects, check-then-act races, changes spread across many files, behavior in the wrong place). Digs deeper with the matching skill and proposes the smallest fix, or a simpler, better-typed design when one exists. |
+| [collaborator-roles](skills/collaborator-roles) | Design the interfaces a class depends on from what it needs, wrap vendor APIs behind them, and mock those roles, not concrete objects. After *Mock Roles, Not Objects* (Freeman, Pryce, Mackinnon, Walnes 2004). |
+| [code-design-review](skills/code-design-review) | A design-risk pass to run alongside a normal code review: checks a diff or module for code smells that carry real risk (double side effects, check-then-act races, changes spread across many files, behavior in the wrong place). Digs deeper with the matching skill and proposes the smallest fix, or a simpler, better-typed design when one exists. |
 | [residuality](skills/residuality) | Residuality Theory after Barry O'Reilly: stress a naive architecture with random stressors and keep what survives, or run a quick contagion check (incidence matrix) on a design, codebase or MR to find where one external fact breaks several parts. |
 | [statechart](skills/statechart) | Check a TLA+ model of a system that moves between states and draw it as a Mermaid statechart, with the shortest path to each state that breaks a rule. |
 
@@ -57,7 +57,7 @@ its `.claude/settings.json`.
 
 | Skill | What it does |
 |---|---|
-| [test-audit](skills/test-audit) | Keep tests that prove behavior and cut the rest: an authoring gate for new tests, junk patterns, a retention bar, and an evidence-first workflow for pruning a suite or a whole subsystem. |
+| [test-audit](skills/test-audit) | Decide whether a test is worth having, keep the ones that prove behavior and cut the rest: an authoring gate for new tests, junk patterns, a retention bar, and an evidence-first workflow for pruning a suite or a whole subsystem. |
 
 ### Observability
 
@@ -69,7 +69,7 @@ its `.claude/settings.json`.
 
 | Skill | What it does |
 |---|---|
-| [make-interfaces-feel-better](skills/make-interfaces-feel-better) | Refine UI consistency, typography, surfaces, icons and feedback within an existing design system. |
+| [make-interfaces-feel-better](skills/make-interfaces-feel-better) | Polish how a UI looks and feels within an existing design system: typography, surfaces, nested radii, icons, hit areas, state feedback and small animations. |
 | [motion-infografikk-film](skills/motion-infografikk-film) | Turn a script into an explainer or infographic motion film: one interactive HTML page with player, chapters and synced script, exported to MP4 with a sound bed. Two ready styles, Punktet and Tråden. Written in Norwegian. |
 
 ## Credits and licenses

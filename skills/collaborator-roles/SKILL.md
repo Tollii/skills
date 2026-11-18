@@ -1,6 +1,6 @@
 ---
 name: collaborator-roles
-description: "Design the interfaces a class depends on from what it needs, and test against them with focused mocks. Use when wrapping a vendor SDK, framework or runtime API behind an interface; when writing or reviewing tests for services, handlers or orchestrators with dependencies; when mocks are brittle, deeply nested or pin call order; or when a class creates its own dependencies and is hard to test. Not for pure functions or value objects."
+description: "Design the interfaces a class depends on from what it needs, and mock those roles, not concrete objects. Use when wrapping a vendor SDK, framework or runtime API behind an interface you own; when mocks are brittle, deeply nested or pin call order; or when a class creates its own dependencies and is hard to test. Not for pure functions or value objects, for whether a test is worth keeping (test-audit), or for state inside one type (type-design)."
 ---
 
 # Collaborator roles
