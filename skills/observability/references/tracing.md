@@ -76,12 +76,12 @@ Allow an opt-out comment that must give a reason, for the rare function that sho
 
 ### 9. Sampling
 
-Decide it in PR 1 and write it in the conventions doc. Wide events are never sampled by this decision; only spans are.
+Decide it in PR 1 and write it in the conventions doc. The default is tail sampling with the rules in [wide-events.md](wide-events.md#sampling): keep every error, every slow request and every VIP or flagged one, plus a random share of the rest (1–5% at scale, 100% at low volume).
 
-- **Default: keep every trace,** parent-based, so a service follows the caller's decision. Most projects never need more. Configure it through the standard env vars (`OTEL_TRACES_SAMPLER=parentbased_always_on`, or `parentbased_traceidratio` with `OTEL_TRACES_SAMPLER_ARG`), not in code, so it changes without a deploy.
-- **When volume or cost forces it,** prefer tail sampling in an OpenTelemetry Collector or the backend: keep every trace with an error or above a latency threshold, and a fraction of the rest. Head-based ratio sampling is the fallback when there is no collector; it drops errors at the same rate as successes.
-- **Clients** usually start at a lower ratio than servers. The server follows the client's decision through `traceparent`, so set the client ratio deliberately.
-- **Record the decision on the event.** Put `trace_sampled` on the wide event, next to `trace_id`, so someone holding an event whose trace is missing knows why.
+- **Where it runs:** an OpenTelemetry Collector with the `tail_sampling` processor, or a backend that samples by outcome. SDK samplers decide when a request starts, before its outcome is known, so they drop errors at the same rate as successes; use them only where no collector can run.
+- **Services keep every span** (`OTEL_TRACES_SAMPLER=parentbased_always_on`), so the collector sees whole traces and a trace is kept or dropped whole. Set it through env vars, not code.
+- **Clients** usually send a smaller share of healthy sessions. The server follows the client's decision through `traceparent`, so set the client's share deliberately.
+- **On the event:** `trace_sampled` next to `trace_id`, and `sample_rate`, so an event whose trace is missing says why and counts can be scaled back up.
 
 ## Prove it works
 

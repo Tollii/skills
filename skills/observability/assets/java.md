@@ -156,6 +156,8 @@ public class WideEventFilter extends OncePerRequestFilter {
 
             // SLF4J 2 key-values; a JSON encoder that writes them as fields
             // (logstash-logback-encoder 7+, or Logback's JsonEncoder) is required.
+            // With a logged event, apply the tail-sampling rule here (references/wide-events.md#sampling).
+            // When the root span is the event, skip the log line: the root span already holds every field.
             var event = log.atInfo();
             state.event().forEach(event::addKeyValue);
             event.log("request");

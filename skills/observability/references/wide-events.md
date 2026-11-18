@@ -42,13 +42,19 @@ Check the framework's own error handling too. A default error handler that print
 
 Browser, mobile and edge code are covered in [backend.md](backend.md#browser-mobile-and-edge): there, the client's root span is the event, and the lint rule applies to them too.
 
-## The root span is not the event
+## Where the event lives
 
-Some projects make the root span itself the wide event and write nothing to a log. This skill does not: the event is a log record, and the root span sits beside it. With the root span as the event, a request whose trace is sampled away leaves no record at all, so one specific request can no longer be looked up afterwards ("order 991 went through but no email came"), and counts for small groups become estimates. The logged event survives trace sampling and keeps both.
+The event can live in one of two places. Both follow his model: one event per unit of work, enriched as the work runs, complete when it ends. Boris writes that "ideally, your wide events ARE your trace spans"; his skill writes them through a logger so that it works with any backend. Pick by what the backend queries well, and record the choice in the conventions doc.
 
-When a project already uses the root span as its event (an ADR, the conventions doc), treat it like any other earlier decision that no longer fits: explain that trade-off to the user, recommend moving to a logged event, and ask before changing it. If they keep it, record the choice and its reason in the conventions doc. The rest of this file still applies, with `enrich()` writing to the root span only.
+| | Root span is the event | Logged event beside the root span |
+| --- | --- | --- |
+| **Pick it when** | The tracing backend filters and groups by any span attribute: Application Insights (`requests` and `customDimensions`), Honeycomb, Axiom, ClickHouse-based tools | The stack is log-first: Loki, ELK, CloudWatch Logs, a log archive, or spans are hard to query |
+| **Written by** | The root span when it ends; nothing goes to a log | The shared logger, in the middleware's `finally` |
+| **`enrich()` writes to** | The root span only | The event, and the root span flattened to dotted keys |
+| **Shape** | Flat, dotted keys (`payment.retries`); span attributes cannot hold objects | Nested objects allowed |
+| **Watch for** | The SDK's span attribute limit (often 128; raise `OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT`) and the backend's limits on attribute length | Backends that drop logs along with sampled-out traces (Azure Monitor's trace-based log sampling): with a logged event, the same tail-sampling rules should decide both, so leave that coupling on only if it matches |
 
-If the backend drops log records along with sampled-out traces (Azure Monitor's trace-based log sampling, for example), turn that off for the wide-event logger, or the event no longer survives sampling.
+When a project already made this choice (an ADR, the conventions doc), it stands while it still fits the backend. Everything else in this file applies to both: the request-context fields, trace ids on the logged event, the content rule, the lint rule against stray logging, tail sampling, and the tests (read "the event" as "the root span" where it is the event).
 
 ## One addition that is not from his skill
 
@@ -58,7 +64,21 @@ This rule is the skill owner's, not Boris Tane's. His examples log an email addr
 
 ## Sampling
 
-Keep every event. His skill does not sample, and most projects do not have the volume to need it. If volume ever forces the question, follow the tail-sampling rules in [Logging Sucks](https://loggingsucks.com/) and write the decision into the conventions doc.
+Tail sampling is the default, following the rules in [Logging Sucks](https://loggingsucks.com/): decide after the unit of work completes, from its outcome.
+
+1. **Always keep errors:** every 5xx, exception and failed job.
+2. **Always keep slow ones:** above the p99 latency, as a fixed threshold the conventions doc records.
+3. **Always keep specific users and flags:** VIP or enterprise customers, internal test accounts, flagged sessions, and requests with a feature flag that is being rolled out.
+4. **Randomly keep a share of the rest:** 1–5% of healthy, fast traffic at scale. At low volume set it to 100%: the rules stay in place and nothing is dropped until volume calls for it.
+
+Put the share used on each kept event as `sample_rate` (1 for always-kept ones), so counts can be scaled back up.
+
+Where the decision runs depends on where the event lives:
+
+- **Root span is the event:** in an OpenTelemetry Collector's `tail_sampling` processor in front of the backend (policies for status code, latency, string attributes and a probabilistic share), or in the backend if it samples by outcome. The SDK's own samplers decide at the start of a request and cannot keep errors. Services keep `parentbased_always_on`, so a trace is either kept whole or dropped whole.
+- **Logged event:** in the middleware, just before the event is written, with a `shouldSample(event)` function in the shape of his example. Base the random share on the trace id rather than a fresh random number, and give the Collector the same rules, so a kept event almost always has its trace. Rules 1–3 always agree; the random share can differ slightly between the two.
+
+Record the rules, the threshold, the user and flag lists, and the share in the conventions doc.
 
 ## Prove it works
 
@@ -67,13 +87,14 @@ Tests show that:
 - A successful unit of work emits exactly one event.
 - One that throws still emits exactly one event, with its error recorded.
 - The event carries the trace id of the root span.
-- A field added through `enrich()` appears on both the event and the root span.
+- A field added through `enrich()` appears on both the event and the root span (or on the root span, when it is the event).
+- The sampling rule keeps an error, a slow request and a VIP request, and drops a healthy one when the share is 0.
 
 Then run lint, typecheck and the test suite.
 
 ## Done when
 
 - [ ] The lint rule runs in CI and reports nothing.
-- [ ] The four tests above pass.
-- [ ] The conventions doc holds the event's schema and the fields left out for privacy.
+- [ ] The tests above pass.
+- [ ] The conventions doc holds where the event lives, its schema, the sampling rules and the fields left out for privacy.
 - [ ] The PR description says whether it is stacked on PR 1.

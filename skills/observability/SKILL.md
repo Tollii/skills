@@ -82,7 +82,7 @@ Branch `observability/tracing` from the default branch. Build what [references/t
 
 Branch `observability/wide-events`; the reference says what to branch from while PR 1 is still open.
 
-Follow [references/wide-events.md](references/wide-events.md). The logging itself is built from the embedded `logging-best-practices` skill, read in full. This skill adds only what that one cannot know: trace ids on the event, one `enrich()` function that writes to the event and the root span, the replacement of existing log calls, a lint rule against stray logging, and what must stay out of an event. Prove it with tests.
+Follow [references/wide-events.md](references/wide-events.md). First decide where the event lives: the root span, when the backend queries span attributes well, or a log record beside it, for log-first stacks. The logging itself is built from the embedded `logging-best-practices` skill, read in full. This skill adds only what that one cannot know: trace ids on the event, one `enrich()` function that writes to the event and the root span, the replacement of existing log calls, a lint rule against stray logging, and what must stay out of an event. Prove it with tests.
 
 ## Step 6: the conventions doc
 
@@ -109,7 +109,7 @@ The final message to the user gives:
 
 - The PR links.
 - The backend decision, and whether it was found in the project, chosen by them, or defaulted.
-- The sampling decision.
+- Where the event lives, and the tail-sampling rules.
 - The env vars to set before telemetry flows.
 - Anything that needs their judgment: opt-outs you were unsure about, fields you left out for privacy, parts of the system that could not be instrumented.
 

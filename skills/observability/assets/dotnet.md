@@ -238,6 +238,8 @@ public sealed class WideEventMiddleware(RequestDelegate next, ILogger<WideEventM
             // A list of key-value pairs as the state is written as fields by the JSON
             // console formatter and by Serilog; check the project's provider does too.
             // ToArray() on a ConcurrentDictionary is a consistent snapshot; LINQ's ToList() is not.
+            // With a logged event, apply the tail-sampling rule here (references/wide-events.md#sampling).
+            // When the root span is the event, skip this line: the root span already holds every field.
             logger.Log(LogLevel.Information, default, state.Event.ToArray(), null, (_, _) => "request");
         }
     }

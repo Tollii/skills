@@ -49,7 +49,7 @@ Last swept: <YYYY-MM-DD>
 
 ### Sampling
 
-<!-- The sampler and ratio for servers and for clients, where it is configured (env vars or collector), and why. "Every trace is kept" is a valid answer. -->
+<!-- Where tail sampling runs (collector or backend), the four rules with their threshold, user and flag lists and random share, the client share, and why. -->
 
 ### Clients
 
@@ -57,7 +57,7 @@ Last swept: <YYYY-MM-DD>
 
 ## Wide events
 
-<!-- Where the middleware and `enrich()` live, and which units of work emit an event. If the project kept the root span as its event, say so here with the reason. -->
+<!-- Where the event lives (the root span, or a log record beside it) and why, given the backend. Where the middleware and `enrich()` live, and which units of work emit an event. -->
 
 ### Schema
 
@@ -67,7 +67,7 @@ Last swept: <YYYY-MM-DD>
 
 ### Sampling
 
-<!-- "Every event is kept" unless sampling was added. If it was: what is always kept, the thresholds, the rate, and the config value that changes it. -->
+<!-- Point to the tracing sampling section if the root span is the event. For a logged event: where `shouldSample` lives and how it stays in step with the collector. -->
 
 ## Lint baselines
 
