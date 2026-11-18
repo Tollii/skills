@@ -50,7 +50,7 @@ its `.claude/settings.json`.
 | [type-design](skills/type-design) | Give each responsibility a type whose shape makes the wrong state impossible: lifecycles as discriminated unions, parse once at the boundary, typed failures. |
 | [mock-roles-not-objects](skills/mock-roles-not-objects) | Design app-owned collaborator roles and focused interaction tests at adapters and third-party boundaries. |
 | [residuality](skills/residuality) | Residuality Theory after Barry O'Reilly: stress a naive architecture with random stressors and keep what survives, or run a quick contagion check (incidence matrix) on a design, codebase or MR to find where one external fact breaks several parts. |
-| [statechart](skills/statechart) | Check a TLA+ model of a system that moves between states and draw it as a Mermaid statechart, with the shortest path to each state that breaks a rule. Runs only when asked. |
+| [statechart](skills/statechart) | Check a TLA+ model of a system that moves between states and draw it as a Mermaid statechart, with the shortest path to each state that breaks a rule. |
 
 ### Testing
 
@@ -62,8 +62,8 @@ its `.claude/settings.json`.
 
 | Skill | What it does |
 |---|---|
-| [observability](skills/observability) | Set up or maintain OpenTelemetry tracing plus wide-event logging in a codebase, delivered as two pull requests. Run it again later as a maintenance pass. Runs only when asked. |
-| [logging-best-practices](skills/logging-best-practices) | Logging built on wide events (canonical log lines): high-cardinality context, one logger, middleware-based setup. Runs only when asked. |
+| [observability](skills/observability) | Set up or maintain OpenTelemetry tracing plus wide-event logging in a codebase, delivered as two pull requests. Run it again later as a maintenance pass. |
+| [logging-best-practices](skills/logging-best-practices) | Logging built on wide events (canonical log lines): high-cardinality context, one logger, middleware-based setup. |
 
 ### UI and motion
 
