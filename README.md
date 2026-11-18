@@ -80,4 +80,4 @@ work, most of them rewritten to fit how I use them; each folder keeps its origin
 - **make-interfaces-feel-better**: [jakubkrehel/make-interfaces-feel-better](https://github.com/jakubkrehel/make-interfaces-feel-better), © Jakub Krehel
 - **statechart**: [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan ([@poteto](https://x.com/poteto)), unchanged
 - **test-audit**: [openclaw/openclaw](https://github.com/openclaw/openclaw/tree/main/.agents/skills/test-audit), © OpenClaw Foundation, rewritten to work in any project
-- **observability** embeds [boristane/agent-skills](https://github.com/boristane/agent-skills)' `logging-best-practices`, © Boris Tane, unchanged in `vendor/`.
+- **observability**: its logging rules are Boris Tane's [`logging-best-practices`](https://github.com/boristane/agent-skills/tree/main/skills/logging-best-practices) skill, © Boris Tane, embedded unchanged in `vendor/logging-best-practices`
