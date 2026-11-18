@@ -23,10 +23,12 @@ The tracing rules ([tracing.md](tracing.md), [backend.md](backend.md)) are gener
 | [OpenTelemetry semantic conventions](https://opentelemetry.io/docs/specs/semconv/) | Attribute and field names |
 | [SDK environment variables](https://opentelemetry.io/docs/languages/sdk-configuration/) | The `OTEL_*` configuration the code relies on |
 | [W3C Trace Context](https://www.w3.org/TR/trace-context/) | The `traceparent` and `tracestate` headers |
+| [OpenTelemetry .NET](https://opentelemetry.io/docs/languages/dotnet/) and [Java](https://opentelemetry.io/docs/languages/java/) docs | The C# and Java assets |
+| [Client-side apps](https://opentelemetry.io/docs/platforms/client-apps/) in the OpenTelemetry docs | Browser and mobile tracing |
 
 ## What is this skill's own
 
-The two-PR split, the rule that functions are traced where they are defined and enforced by lint, trace ids on the event and `enrich()` writing to both the event and the root span, the rule about what stays out of an event, the conventions doc, and the maintenance pass.
+The two-PR split, the rule that functions are traced where they are defined and enforced by lint, the I/O layers, the adoption path with shrinking lint baselines, trace ids on the event and `enrich()` writing to both the event and the root span, the rule about what stays out of an event, the conventions doc, and the maintenance pass.
 
 ## For the conventions doc
 

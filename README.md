@@ -62,8 +62,7 @@ its `.claude/settings.json`.
 
 | Skill | What it does |
 |---|---|
-| [observability](skills/observability) | Set up or maintain OpenTelemetry tracing plus wide-event logging in a codebase, delivered as two pull requests. Run it again later as a maintenance pass. |
-| [logging-best-practices](skills/logging-best-practices) | Logging built on wide events (canonical log lines): high-cardinality context, one logger, middleware-based setup. |
+| [observability](skills/observability) | OpenTelemetry tracing plus wide-event logging for servers, browsers, mobile and edge, with TypeScript, C# and Java examples. Sets it up, adopts an existing setup, runs maintenance passes, or helps with a single change. |
 
 ### UI and motion
 
@@ -88,4 +87,4 @@ work, most of them rewritten to fit how I use them; each folder keeps its origin
 - **make-interfaces-feel-better**: [jakubkrehel/make-interfaces-feel-better](https://github.com/jakubkrehel/make-interfaces-feel-better), © Jakub Krehel
 - **statechart**: [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan ([@poteto](https://x.com/poteto)), unchanged
 - **test-audit**: [openclaw/openclaw](https://github.com/openclaw/openclaw/tree/main/.agents/skills/test-audit), © OpenClaw Foundation, rewritten to work in any project
-- **logging-best-practices**: [boristane/agent-skills](https://github.com/boristane/agent-skills), © Boris Tane. `observability` embeds an unchanged copy in `vendor/`.
+- **observability** embeds [boristane/agent-skills](https://github.com/boristane/agent-skills)' `logging-best-practices`, © Boris Tane, unchanged in `vendor/`.

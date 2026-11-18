@@ -111,11 +111,12 @@ section "OTEL_* configuration mentioned in"
 found="$(git grep -l -E 'OTEL_[A-Z_]+' -- "${skip[@]}" 2>/dev/null | head -20)"
 if [ -n "$found" ]; then echo "$found"; else none; fi
 
-section "console.* calls"
-summarize 'console\.(log|info|warn|error|debug|trace)\('
+section "Direct output calls (console.*, Console.Write*, System.out/err)"
+summarize 'console\.(log|info|warn|error|debug|trace)\(|Console\.Write(Line)?\(|System\.(out|err)\.print'
 
-section "Inline spans (startSpan / startActiveSpan)"
-summarize '\.(startSpan|startActiveSpan)\('
+
+section "Spans opened directly (startSpan, startActiveSpan, StartActivity, spanBuilder)"
+summarize '\.(startSpan|startActiveSpan|StartActivity|spanBuilder)\('
 
 if [ -n "$since" ]; then
   section "Source files changed since $since"

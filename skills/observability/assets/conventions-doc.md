@@ -29,6 +29,10 @@ Last swept: <YYYY-MM-DD>
 
 <!-- Where the helper lives, one example of using it, and the lint rule that enforces it. -->
 
+### I/O layers
+
+<!-- The folders and naming patterns whose exported functions must be traced. The lint rule reads the same list. -->
+
 ### Opting a function out
 
 <!-- The exact comment, and that it must give a reason. -->
@@ -43,6 +47,14 @@ Last swept: <YYYY-MM-DD>
 | route | |
 | <domain entity id> | |
 
+### Sampling
+
+<!-- The sampler and ratio for servers and for clients, where it is configured (env vars or collector), and why. "Every trace is kept" is a valid answer. -->
+
+### Clients
+
+<!-- Browser, mobile and edge apps: SDK, which origins get `traceparent`, where they export to, how they flush, and the consent rule. Delete if there are none. -->
+
 ## Wide events
 
 <!-- Where the middleware and `enrich()` live, and which units of work emit an event. -->
@@ -56,6 +68,14 @@ Last swept: <YYYY-MM-DD>
 ### Sampling
 
 <!-- "Every event is kept" unless sampling was added. If it was: what is always kept, the thresholds, the rate, and the config value that changes it. -->
+
+## Lint baselines
+
+<!-- Only while adopting an existing codebase: each baselined rule, where its baseline lives, and its size at each sweep. Delete when empty. -->
+
+## Gaps
+
+<!-- Only while adopting: each difference from the target and the plan for it. Delete when empty. -->
 
 ## Deliberately left out
 

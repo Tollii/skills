@@ -33,9 +33,20 @@ Pricing, free tiers and OTLP support change, so check current docs before naming
 
 Give developers a way to see traces locally from day one: a single-container OTLP viewer (Jaeger, or Grafana's `otel-lgtm` image), documented in the conventions doc.
 
-## Runtimes that cannot run the full SDK
+## Browser, mobile and edge
 
-Edge workers, managed function platforms and mobile clients often cannot run the full SDK. Use the path the platform supports, or a small OTLP-over-fetch exporter.
+Clients and constrained runtimes are in scope, and they follow the same rules as servers: one setup module, spans at the definition, request context, propagation, no stray logging. What differs is the same for all three: the code runs somewhere you don't control, it can't hold secrets, and it may stop at any moment.
+
+- **SDK.** Use the platform's OpenTelemetry SDK: `@opentelemetry/sdk-trace-web` in the browser, the Swift and Android SDKs on mobile, and the platform's supported path, or a small OTLP-over-fetch exporter, on edge workers and managed functions.
+- **Units of work.** A page load, a navigation or a user action (submit, purchase, upload) gets a root span. Its children are the calls it makes. On a client, that root span is the wide event: put the fields there through the same `enrich()` idea rather than shipping a separate log stream, unless the project already has one.
+- **Propagation to your own APIs.** Inject `traceparent` into calls to the project's own origins only, never third parties (in the browser: `propagateTraceHeaderCorsUrls` on the fetch and XHR instrumentations). Cross-origin APIs must allow the `traceparent` and `tracestate` request headers in CORS. The server then continues the client's trace.
+- **No secrets in the client.** A backend API key in a bundle or an app is public. Export to an endpoint the project controls: an OpenTelemetry Collector or a small proxy route that adds auth, with rate limits.
+- **Flushing.** The runtime can end before a batch is sent. In the browser, flush on `visibilitychange` to hidden (with `fetch` `keepalive` or `sendBeacon`); on edge workers, hand the flush to `waitUntil` or the platform's equivalent; on mobile, flush when the app goes to the background.
+- **Privacy and consent.** Strip query strings and fragments from URLs, never record input values, and use the user id only where the product's consent rules allow client telemetry. Where consent is required, the SDK starts only after it is given; record that in the conventions doc.
+- **Sampling.** See [tracing.md](tracing.md#9-sampling); clients usually start lower than servers.
+- **Proof.** The same in-memory-exporter tests run in the client's test runner, and one test shows an outgoing call to the API carries `traceparent` while a third-party call does not.
+
+Clients can go in PR 1 with the servers. When they are large enough to review on their own, give them their own branch, `observability/client-tracing`, and say so in PR 1.
 
 If part of the system cannot be traced, or cannot export, say so in the PR and in the conventions doc. Do not leave a setup that looks complete and silently emits nothing.
 

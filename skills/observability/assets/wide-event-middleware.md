@@ -19,6 +19,8 @@ export function linkToTrace(c: Context, wideEvent: WideEvent): void {
   const rootSpan = trace.getActiveSpan();
   wideEvent.trace_id = rootSpan?.spanContext().traceId;
   wideEvent.span_id = rootSpan?.spanContext().spanId;
+  // Whether the trace is kept, so an event with a missing trace explains itself.
+  wideEvent.trace_sampled = rootSpan ? (rootSpan.spanContext().traceFlags & 1) === 1 : false;
   // The span that is active here is the root span. Keep it, because handlers
   // call enrich() from inside traced helpers, where a child span is active.
   c.set("rootSpan", rootSpan);

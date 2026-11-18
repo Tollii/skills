@@ -30,7 +30,7 @@ One clarification for this workflow: PR 1 gave every unit of work a root span, n
 This is the part his skill leaves open, because it does not assume tracing exists. [assets/wide-event-middleware.md](../assets/wide-event-middleware.md) shows the few lines involved.
 
 - **The root-span middleware runs first.** The event middleware takes the span that is active when it starts as the root span. That only holds if the middleware from PR 1 is registered before it and wraps the rest of the request.
-- **Trace and span ids on the event.** The event carries the trace id and span id of the unit of work's root span, so an event leads to its trace and back.
+- **Trace and span ids on the event.** The event carries the trace id and span id of the unit of work's root span, so an event leads to its trace and back, plus `trace_sampled`, so an event whose trace was sampled away says so.
 - **One `enrich()` for handlers.** It writes each field to the wide event his middleware created, never to a second object, and to the root span, so the two always agree and nobody maintains two sets of fields. The event keeps the shape his rules give the fields, nested objects included; the span gets the same fields flattened to dotted keys, because a span attribute cannot hold an object. The middleware keeps a reference to the root span, because handlers call `enrich()` from inside traced helpers, where the active span is a child.
 - **The request context is on the event too.** The values PR 1 puts on every span (request id, user id, tenant id, route, entity ids) also appear on the event. Name and shape them there as his rules say, not as the span does; the conventions doc records which event field matches which span attribute.
 
@@ -38,7 +38,9 @@ This is the part his skill leaves open, because it does not assume tracing exist
 
 Go through every existing `console.*` and logger call and bring it under his rules. Use the project's logger if it has one. If it has none, the one his examples use or a few lines that write JSON are both fine; say which in the PR.
 
-Check the framework's own error handling too. A default error handler that prints a stack trace through `console` bypasses the logger, and a framework that swallows handler errors means his middleware's `catch` never runs: read the error where the framework keeps it (Hono: `c.error`, after `next()`), and replace the default handler so the error is recorded on the event instead. Then add a lint rule in the project's linter, so the work does not erode: outside the logger module, `console.*` and any logger other than the shared one are errors. This mirrors the tracing rule from PR 1.
+Check the framework's own error handling too. A default error handler that prints a stack trace through `console` bypasses the logger, and a framework that swallows handler errors means his middleware's `catch` never runs: read the error where the framework keeps it (Hono: `c.error`, after `next()`), and replace the default handler so the error is recorded on the event instead. Then add a lint rule in the project's linter, so the work does not erode: outside the logger module, `console.*` (or `Console.Write*`, `System.out`, `print`, `fmt.Print*`) and any logger other than the shared one are errors. This mirrors the tracing rule from PR 1. On an existing codebase with many calls, land it with a baseline as [adopt.md](adopt.md#lint-rules-on-an-existing-codebase) describes.
+
+Browser, mobile and edge code are covered in [backend.md](backend.md#browser-mobile-and-edge): there, the client's root span is the event, and the lint rule applies to them too.
 
 ## One addition that is not from his skill
 

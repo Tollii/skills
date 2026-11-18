@@ -6,11 +6,11 @@ Branch: `observability/tracing`, from the default branch.
 
 ### 1. SDK setup in one module
 
-It loads before anything else and sets the service name, version, commit, environment and region as resource attributes. Start from [assets/sdk-setup.md](../assets/sdk-setup.md), which also shows how to keep the app running, and still recording spans, with no endpoint set.
+It loads before anything else and sets the service name, version, commit, environment and region as resource attributes. Start from [assets/sdk-setup.md](../assets/sdk-setup.md) ([C#](../assets/dotnet.md), [Java](../assets/java.md)), which also shows how to keep the app running, and still recording spans, with no endpoint set.
 
 ### 2. One tracing helper, applied where functions are defined
 
-A function is traced by wrapping its definition, not by opening a span inside its body or at its call sites. Start from [assets/tracing-helper.md](../assets/tracing-helper.md):
+A function is traced by wrapping its definition, not by opening a span inside its body or at its call sites. Start from [assets/tracing-helper.md](../assets/tracing-helper.md), or the [C#](../assets/dotnet.md) and [Java](../assets/java.md) equivalents:
 
 ```ts
 // at the definition
@@ -25,9 +25,11 @@ Why definitions and not inline spans: every caller gets the span for free, nobod
 
 ### 3. Coverage
 
-Trace every route handler, every middleware, and every helper that does I/O. The rule the linter enforces is: every exported async function is traced. Non-exported async functions that make a network, database, queue or file call are traced too.
+Trace what crosses a boundary: every route handler and other entry point, every middleware, and every function that makes a network, database, queue, cache or file call. Pure computation is not traced; a span per helper costs money and buries the spans that matter.
 
-Frameworks often take handlers as inline functions, which are not exported and so escape the rule. Hoist each one into a named, exported, traced function and register that. The middleware that opens the root span is the exception: the root span is its span, so it needs no second one.
+Make the boundary mechanical so a linter can check it. Name the **I/O layers** in the conventions doc: folders (`src/db/`, `src/clients/`, `handlers/`), naming patterns (`*Repository`, `*Client`, `*Gateway`), or both. The rule the linter enforces is: every exported function in an I/O layer, and every entry point, is traced. An I/O call that lives outside those layers is a sign the layer list or the code needs moving.
+
+Frameworks often take handlers as inline functions, which escape a rule about exported functions. Hoist each one into a named, exported, traced function and register that. The middleware that opens the root span is the exception: the root span is its span, so it needs no second one.
 
 ### 4. Span names
 
@@ -55,17 +57,29 @@ Find out what the framework does with an error a handler throws. Many catch it a
 - **Out.** Inject it into every outgoing request by instrumenting the HTTP client or the one fetch wrapper the project uses.
 - **Async work.** Queue messages and job payloads carry it as well.
 - **Baggage.** Send it only to the project's own services, since it can hold user data.
+- **Clients.** Browser, mobile and edge code inject `traceparent` into calls to the project's own APIs, so a user action and the server work it causes are one trace. [backend.md](backend.md#browser-mobile-and-edge) has what that needs.
 
 ### 8. A lint rule that fails the build
 
 In whatever linter the project uses (a custom ESLint rule, a Biome plugin, or a small script wired into the lint command and CI), enforce two things:
 
-- An exported async function that is not wrapped by the tracing helper is an error.
-- A direct `startSpan` or `startActiveSpan` call outside the tracing module is an error.
+- An exported function in an I/O layer, or an entry point, that is not wrapped by the tracing helper is an error.
+- Opening a span anywhere but the tracing module is an error (`startSpan`, `startActiveSpan`, `ActivitySource`, `Tracer`, whatever the language uses).
+
+For a project that already has many violations, see [adopt.md](adopt.md#lint-rules-on-an-existing-codebase) for landing the rule with a baseline.
 
 If the project has a lint command but no working linter configuration, set up the smallest one that runs the rule, and say so in the PR.
 
 Allow an opt-out comment that must give a reason, for the rare function that should not be traced. Run the rule over the whole repo and fix everything it finds. The PR is not done while the rule reports anything.
+
+### 9. Sampling
+
+Decide it in PR 1 and write it in the conventions doc. Wide events are never sampled by this decision; only spans are.
+
+- **Default: keep every trace,** parent-based, so a service follows the caller's decision. Most projects never need more. Configure it through the standard env vars (`OTEL_TRACES_SAMPLER=parentbased_always_on`, or `parentbased_traceidratio` with `OTEL_TRACES_SAMPLER_ARG`), not in code, so it changes without a deploy.
+- **When volume or cost forces it,** prefer tail sampling in an OpenTelemetry Collector or the backend: keep every trace with an error or above a latency threshold, and a fraction of the rest. Head-based ratio sampling is the fallback when there is no collector; it drops errors at the same rate as successes.
+- **Clients** usually start at a lower ratio than servers. The server follows the client's decision through `traceparent`, so set the client ratio deliberately.
+- **Record the decision on the event.** Put `trace_sampled` on the wide event, next to `trace_id`, so someone holding an event whose trace is missing knows why.
 
 ## Prove it works
 
@@ -82,7 +96,7 @@ Then run lint, typecheck and the test suite. If you can start the app, send it o
 
 - [ ] The lint rule runs in CI and reports nothing.
 - [ ] The four tests above pass.
-- [ ] The conventions doc exists and covers the backend, local viewing, the helper, the opt-out, and the request-context fields.
+- [ ] The conventions doc exists and covers the backend, local viewing, the helper, the I/O layers, the opt-out, the request-context fields and the sampling decision.
 - [ ] The PR description names the env vars to set and anything that could not be traced.
 
 ## References

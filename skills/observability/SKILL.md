@@ -1,6 +1,6 @@
 ---
 name: observability
-description: Set up or maintain observability in a codebase with OpenTelemetry tracing plus wide-event logging that follows the logging-best-practices skill, delivered as two pull requests. Use when asked to add tracing, replace scattered logs with one event per request, or check that existing observability still covers new code. Run it again later as a maintenance pass.
+description: Tracing and logging for any codebase, new or existing. OpenTelemetry tracing plus wide-event logging (one event per unit of work) across servers, browsers, mobile apps and edge workers. Use to set observability up, to bring existing tracing or logging up to standard, for a periodic maintenance pass, and for single changes such as tracing a function, fixing a log call or reviewing a diff's telemetry. Full setups land as two pull requests.
 license: MIT
 metadata:
   harness: [claude, codex]
@@ -13,9 +13,7 @@ Bring a codebase to the point where any request can be explained after the fact.
 
 Tracing is this skill's own subject. The logging rules are Boris Tane's `logging-best-practices` skill, embedded verbatim in [vendor/logging-best-practices](vendor/logging-best-practices/SKILL.md); this skill applies it and ties its events to the traces.
 
-The work lands as two pull requests, tracing first and logging second, so each can be reviewed on its own. On a project that already has both, the skill runs as a maintenance pass: it covers code that arrived since the last run and checks that the logging is still good.
-
-The examples are TypeScript. The rules are not tied to a language; elsewhere, use that language's idiom for the same idea (decorators, middleware, `defer`, context managers).
+There are no separate metrics. Counts, rates and latencies come from querying wide events and spans in the backend. Add OpenTelemetry metrics only for what no unit of work carries, such as queue depth, connection-pool use or runtime memory, or where the project already has metrics and dashboards that depend on them.
 
 ## Files in this skill
 
@@ -23,52 +21,65 @@ Read only what the current step needs.
 
 | File | Read it when |
 | --- | --- |
-| [references/backend.md](references/backend.md) | Deciding where telemetry goes (full setup, or an adopted setup with no backend) |
-| [references/tracing.md](references/tracing.md) | Building or fixing tracing (PR 1) |
+| [references/backend.md](references/backend.md) | Deciding where telemetry goes, and for browser, mobile and edge code |
+| [references/tracing.md](references/tracing.md) | Building or fixing tracing (PR 1), including sampling |
 | [references/wide-events.md](references/wide-events.md) | Building or fixing wide events (PR 2): applying `logging-best-practices` and tying events to traces |
 | [vendor/logging-best-practices](vendor/logging-best-practices/SKILL.md) | Writing or judging any logging code. Boris Tane's skill, verbatim; read all of it |
-| [references/maintenance.md](references/maintenance.md) | Both halves already exist |
+| [references/adopt.md](references/adopt.md) | The project already has tracing or logging that this skill did not build |
+| [references/maintenance.md](references/maintenance.md) | Both halves exist and follow this skill |
 | [references/sources.md](references/sources.md) | A rule needs its reasoning, or someone asks where it comes from |
-| [assets/sdk-setup.md](assets/sdk-setup.md) | Writing the module that sets up the SDK |
-| [assets/tracing-helper.md](assets/tracing-helper.md) | Writing the tracing helper and the request-context processor |
-| [assets/wide-event-middleware.md](assets/wide-event-middleware.md) | Adding trace ids and `enrich()` to the middleware his skill describes |
+| [assets/sdk-setup.md](assets/sdk-setup.md), [assets/tracing-helper.md](assets/tracing-helper.md), [assets/wide-event-middleware.md](assets/wide-event-middleware.md) | Writing the TypeScript pieces |
+| [assets/dotnet.md](assets/dotnet.md) | Writing the same pieces in C# / ASP.NET Core |
+| [assets/java.md](assets/java.md) | Writing the same pieces in Java / Spring Boot |
 | [assets/conventions-doc.md](assets/conventions-doc.md) | Creating or extending the project's conventions doc |
 | [scripts/survey.sh](scripts/survey.sh) | Step 1, to collect the mechanical facts quickly |
-| `PROJECT.md`, when present | Before anything else. Notes for the repository this copy is installed in; not part of the shared skill |
 
 The assets are starting points to adapt to the project's framework and naming, not files to copy unchanged.
 
-## Step 1: find out where the project stands
+### Other languages
 
-If a `PROJECT.md` sits next to this file, read it first. It holds the decisions already made for the repository this copy is installed in, and they stand.
+The rules are the same everywhere; only the idiom changes.
+
+| Language | Traced at the definition | Request context | Lint rules |
+| --- | --- | --- | --- |
+| TypeScript | `traced()` wrapper | `AsyncLocalStorage` | ESLint or Biome rule, or a script |
+| C# | `Traced.Run(...)` as the method body | `AsyncLocal` holding a shared object | BannedApiAnalyzers, plus a Roslyn check |
+| Java | `@WithSpan` | OpenTelemetry `Context` key | ArchUnit tests |
+| Python | `@tracer.start_as_current_span(...)` as a decorator | `contextvars` | ruff (`T20`, banned-api) |
+| Go | `ctx, span := tracer.Start(ctx, ...)` and `defer span.End()` as the first lines | `context.Context` | forbidigo, or a `go/analysis` pass |
+
+## Step 1: find out where the project stands
 
 Read before deciding anything. Run `bash <this skill's folder>/scripts/survey.sh` from the repository root for the facts a search can find (telemetry dependencies, `console.*` counts, inline spans, earlier runs), then read the code for the rest:
 
-- **Stack.** Languages, runtimes (Node, Bun, Deno, edge workers, serverless, a managed backend), web framework, monorepo layout, and which packages are deployed services as opposed to libraries or clients.
-- **Units of work.** HTTP routes, and everything else that starts work: queue consumers, scheduled jobs, webhooks, CLI commands.
-- **Existing telemetry.** OpenTelemetry packages, vendor SDKs or agents (APM, error tracker, analytics), a logger library, how much `console.*` there is, and any env vars, infra config, CI secrets or docs that name a backend.
+- **Stack.** Languages, runtimes (Node, Bun, Deno, .NET, JVM, edge workers, serverless, a managed backend), web framework, monorepo layout, and which packages are deployed services, browser or mobile clients, or libraries.
+- **Units of work.** HTTP routes, and everything else that starts work: queue consumers, scheduled jobs, webhooks, CLI commands, and on clients page loads, navigations and user actions.
+- **Existing telemetry.** OpenTelemetry packages, vendor SDKs or agents (APM, error tracker, analytics, RUM), a logger library, how much `console.*` there is, and any env vars, infra config, CI secrets or docs that name a backend.
 - **Identity.** What identifies the user and the tenant (org, workspace, business, account), where in a request they become known, and what the domain's main entities are.
 - **Conventions.** Linter, test runner, branch and commit style, PR template, and any PR-filing skill or contributing guide in the repo.
-- **Earlier runs of this skill.** A conventions doc (`docs/observability.md` by default), and branches or PRs named `observability/*`, open or merged.
+- **Earlier runs of this skill.** A conventions doc (`docs/observability.md` by default), and branches or PRs named `observability/*`, open or merged. The conventions doc holds the decisions already made for this repository, and they stand.
+
+For a narrow change, the conventions doc and the code around the change are enough; skip the survey.
 
 ## Step 2: pick the mode
 
-| What you find | What to do |
+| What you find, or what was asked | Mode |
 | --- | --- |
-| No tracing helper, no conventions doc | Full setup: steps 3, 4, 5 |
-| Tracing exists (merged, or PR 1 open), no wide events | Resume at step 5 |
-| Both exist | Maintenance pass: [references/maintenance.md](references/maintenance.md) |
-| Observability someone built without this skill | Adopt it: write the conventions doc to describe what is there, then close the gaps against steps 4 and 5. Ask before replacing a library or a backend. |
+| A single change: trace a function, fix a log call, add a field, review a diff's telemetry, answer a question | **Narrow change.** Apply the rules below and the relevant reference to that change only. Follow the conventions doc if there is one. Open no branches or PRs beyond what was asked. If the project has no setup to build on, say so and offer a full setup or adoption instead of inventing one piece. |
+| No tracing, no logging worth keeping | **Full setup:** steps 3, 4, 5, 6 |
+| Tracing or logging that this skill did not build: a vendor agent, inline spans, a logger with scattered lines | **Adopt:** [references/adopt.md](references/adopt.md) |
+| Tracing exists and follows this skill (merged, or PR 1 open), no wide events | Resume at step 5 |
+| Both halves exist and follow this skill | **Maintenance pass:** [references/maintenance.md](references/maintenance.md) |
 
 Judge by the code, not only by the doc. A conventions doc with no tracing helper behind it means setup was never finished.
 
 ## Step 3: decide where telemetry goes
 
-Follow [references/backend.md](references/backend.md). In short: the code stays vendor-neutral (OpenTelemetry SDK, OTLP exporter, standard `OTEL_*` env vars), an existing backend wins, otherwise ask one question with a recommendation, and if nobody answers go ahead with plain OTLP and say so at the top of PR 1.
+Follow [references/backend.md](references/backend.md). In short: the code stays vendor-neutral (OpenTelemetry SDK, OTLP exporter, standard `OTEL_*` env vars), an existing backend wins, otherwise ask one question with a recommendation, and if nobody answers go ahead with plain OTLP and say so at the top of PR 1. Browser, mobile and edge code follow the same rules, with the additions in its last section.
 
 ## Step 4: PR 1, tracing
 
-Branch `observability/tracing` from the default branch. Build what [references/tracing.md](references/tracing.md) lists: SDK setup in one module, one tracing helper applied where functions are defined, request context on every span, W3C propagation in and out, and a lint rule that fails the build on an untraced exported async function or an inline span. Prove it with in-memory-exporter tests before calling it done.
+Branch `observability/tracing` from the default branch. Build what [references/tracing.md](references/tracing.md) lists: SDK setup in one module, one tracing helper applied where functions are defined, request context on every span, W3C propagation in and out (clients included), a sampling decision, and a lint rule that fails the build on an untraced I/O function or a span opened anywhere else. Prove it with in-memory-exporter tests before calling it done.
 
 ## Step 5: PR 2, wide events
 
@@ -82,7 +93,8 @@ PR 1 creates it from [assets/conventions-doc.md](assets/conventions-doc.md) and 
 
 ## Rules that hold in every mode
 
-- **Definitions, not call sites.** A function is traced by wrapping its definition. Inline spans drift, and no tool can tell which ones are missing.
+- **Definitions, not call sites.** A function is traced by wrapping its definition, or by opening its span as the first statement of its own body where the language has no wrapper. Spans opened mid-function or around a call drift, and no tool can tell which ones are missing.
+- **Trace what crosses a boundary.** Entry points and functions that do I/O get spans; pure computation does not. Spans cost money and attention.
 - **Vendor-neutral code.** Changing backend is a config change. With no endpoint set, the app still runs.
 - **Logging rules come from `logging-best-practices`, unmodified.** Do not paraphrase, trim or override them here, and do not edit the embedded copy.
 - **One event per unit of work.** Handlers add fields; they do not write log lines.
@@ -100,6 +112,7 @@ The final message to the user gives:
 
 - The PR links.
 - The backend decision, and whether it was found in the project, chosen by them, or defaulted.
+- The sampling decision.
 - The env vars to set before telemetry flows.
 - Anything that needs their judgment: opt-outs you were unsure about, fields you left out for privacy, parts of the system that could not be instrumented.
 
