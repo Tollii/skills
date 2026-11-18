@@ -32,6 +32,10 @@ Look for these in types, schemas (zod, OpenAPI, Prisma, JSON Schema), parsers an
 3. **Write one variant per state.** Tag the union with the field that already exists (`state`, `status`, `kind`, `resolution`). Each variant carries only its own fields. A field stays optional inside a variant only when it is unknown in that state, such as who merged when the code host does not say. Use `z.discriminatedUnion` for zod and `oneOf` for OpenAPI; in other languages, a closed sum type (F# union, Rust enum, Kotlin/Java sealed type).
 4. **Make each transition a gate.** A transition is a function from the variant it starts in to the variant it ends in. Code that needs a state's facts takes that variant as its parameter, so the only ways to obtain one are its transition and the parser of its stored form. Keep construction controlled: a public constructor or a cast defeats the invariant.
 5. **Parse once at the boundary.** A database row, a webhook payload or a contract response may need nullable columns. Its parser turns them into the union, and the core never sees the nullables. A stronger type must be earned by the operation that establishes it: parsing syntax does not prove identity, permission or current database state. Recheck facts that can change or that cross another trust boundary.
+   - **Shape, then meaning.** A schema or wire parser proves structure; a domain parser proves business meaning. Keep them as two steps when both exist, and keep wire contracts separate from domain types.
+   - **Collect or stop.** Collect errors from independent fields so the caller can fix them all at once. Stop at the first failure when a later step depends on an earlier fact.
+   - **Strengthen the argument.** A function that accepts broad input and rejects most of it inside should take the narrower, parsed type instead.
+   - **Impossible history fails.** Replaying events or applying a transition from the wrong state returns an explicit invalid-transition outcome; it never silently skips.
 6. **Give expected failures a type.** A function that can fail returns the project's `Result` type (or a discriminated outcome) with a named error. Derive messages from the failure; do not decide from message text.
 7. **Give coordination one owner.** When an orchestrator sequences several steps, name it after what it coordinates. It owns sequencing, effects (time, randomness, I/O) and failure handling; the pure domain functions it calls own the decisions.
 
@@ -92,6 +96,7 @@ For a multi-stage pipeline in a language with closed unions, see [the F# example
 - One nullable fact that is not a state, such as when a completion was reopened.
 - A wrapper or a pattern that adds a name without removing a check from any caller. A function or module is enough when it captures the whole responsibility.
 - Branding every primitive. Give a value its own type when mixing it up with another is a real mistake.
+- Style churn. Records, unions and pattern matching earn their place when they make intent easier to read and harder to misuse, not because the language has them.
 
 For collaborator interfaces, adapters or brittle interaction tests, use `mock-roles-not-objects` instead: that skill covers relationships between components, this one covers internal facts and transitions.
 

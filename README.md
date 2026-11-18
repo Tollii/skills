@@ -49,6 +49,7 @@ its `.claude/settings.json`.
 |---|---|
 | [type-design](skills/type-design) | Give each responsibility a type whose shape makes the wrong state impossible: lifecycles as discriminated unions, parse once at the boundary, typed failures. |
 | [mock-roles-not-objects](skills/mock-roles-not-objects) | Design app-owned collaborator roles and focused interaction tests at adapters and third-party boundaries. |
+| [design-review](skills/design-review) | Review a diff or module for code smells that carry real risk (double side effects, check-then-act races, changes spread across many files, behavior in the wrong place) and propose the smallest fix for each. |
 | [residuality](skills/residuality) | Residuality Theory after Barry O'Reilly: stress a naive architecture with random stressors and keep what survives, or run a quick contagion check (incidence matrix) on a design, codebase or MR to find where one external fact breaks several parts. |
 | [statechart](skills/statechart) | Check a TLA+ model of a system that moves between states and draw it as a Mermaid statechart, with the shortest path to each state that breaks a rule. |
 
@@ -76,8 +77,6 @@ its `.claude/settings.json`.
 | Skill | What it does |
 |---|---|
 | [show-me](skills/show-me) | Explain the current topic with a diagram, code sketch or small HTML page when a visual helps. |
-
-`shared/design-principles.md` is a general design reference some of these skills draw on.
 
 ## Credits and licenses
 
