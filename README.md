@@ -72,12 +72,6 @@ its `.claude/settings.json`.
 | [make-interfaces-feel-better](skills/make-interfaces-feel-better) | Refine UI consistency, typography, surfaces, icons and feedback within an existing design system. |
 | [motion-infografikk-film](skills/motion-infografikk-film) | Turn a script into an explainer or infographic motion film: one interactive HTML page with player, chapters and synced script, exported to MP4 with a sound bed. Two ready styles, Punktet and Tråden. Written in Norwegian. |
 
-### Workflow
-
-| Skill | What it does |
-|---|---|
-| [show-me](skills/show-me) | Explain the current topic with a diagram, code sketch or small HTML page when a visual helps. |
-
 ## Credits and licenses
 
 My own skills are MIT licensed (see [LICENSE](LICENSE)). These come from other people's MIT-licensed
