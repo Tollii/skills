@@ -6,7 +6,7 @@ Written for Java 17+, Spring Boot 3, the OpenTelemetry Java agent 2.x and SLF4J 
 
 Two things differ from TypeScript:
 
-- **The Java agent does the SDK setup.** It instruments servlets, HTTP clients, JDBC and messaging without code changes, and reads the standard `OTEL_*` env vars. Where an agent is not allowed (some native-image or locked-down runtimes), use the `opentelemetry-spring-boot-starter`, which covers the common libraries from inside the app.
+- **The Java agent does the SDK setup.** It instruments servlets, HTTP clients, JDBC and messaging without code changes, and reads the standard `OTEL_*` env vars. Where an agent is not allowed (some native-image or locked-down runtimes), use the `opentelemetry-spring-boot-starter`, which covers the common libraries from inside the app. The two paths differ in one place, [how request context reaches later spans](#request-context); everything else here is the same for both.
 - **Tracing at the definition is an annotation:** `@WithSpan` from `opentelemetry-instrumentation-annotations`. It names the span `Class.method`, ends it on every path and records exceptions.
 
 ## SDK setup
@@ -14,9 +14,7 @@ Two things differ from TypeScript:
 Start the JVM with the agent and configure it through env vars only:
 
 ```sh
-java -javaagent:opentelemetry-javaagent.jar \
-     -Dotel.javaagent.extensions=telemetry-extension.jar \
-     -jar app.jar
+java -javaagent:opentelemetry-javaagent.jar -jar app.jar
 ```
 
 | Variable | Value |
@@ -59,8 +57,9 @@ public final class RequestContext {
         return Optional.ofNullable(Context.current().get(KEY));
     }
 
-    /** A processor only sees spans as they start, so also write to the root and current span. */
+    /** Writes the field to the root span and to the span that is current right now. */
     public static void set(String key, String value) {
+        if (value == null) return;   // ConcurrentHashMap rejects nulls; an absent field says the same
         current().ifPresent(s -> {
             s.fields().put(key, value);
             s.root().setAttribute(key, value);
@@ -76,7 +75,11 @@ public record RequestState(Span root, Map<String, String> fields, Map<String, Ob
 }
 ```
 
-The processor copies the fields onto every span as it starts. With the agent, register it in a small extension jar (the `-Dotel.javaagent.extensions` above) through `AutoConfigurationCustomizerProvider`:
+How a field reaches spans that start *after* it was set depends on which path runs the SDK.
+
+**With the Java agent: `set()` only, no span processor.** `RequestContext.set()` writes each field to the root span and to the span current at that moment, and the agent path relies on that alone. Set identity fields as early as they are known (in the filter or the auth layer), so the root span and the event carry them; spans that start later do not get them. Do not add a `SpanProcessor` in an agent extension jar to copy the fields: an extension is loaded by the agent's class loader and gets the agent's own copy of `Context`, where a `ContextKey` created in application code is not visible, so the processor would copy nothing and report no error.
+
+**With the Spring Boot starter (no agent): add a span processor.** The SDK runs inside the application, so a processor sees the same `ContextKey` and can copy the fields onto every span as it starts. Register it through an `AutoConfigurationCustomizerProvider` bean:
 
 ```java
 public final class RequestContextProcessor implements SpanProcessor {
@@ -89,18 +92,21 @@ public final class RequestContextProcessor implements SpanProcessor {
     @Override public boolean isEndRequired() { return false; }
 }
 
-@AutoService(AutoConfigurationCustomizerProvider.class)
-public final class TelemetryCustomizer implements AutoConfigurationCustomizerProvider {
-    @Override public void customize(AutoConfigurationCustomizer c) {
-        c.addTracerProviderCustomizer((builder, config) ->
+@Configuration
+public class TelemetryConfig {
+    @Bean
+    public AutoConfigurationCustomizerProvider requestContextOnEverySpan() {
+        return c -> c.addTracerProviderCustomizer((builder, config) ->
             builder.addSpanProcessor(new RequestContextProcessor()));
     }
 }
 ```
 
+With the starter the server span is opened by the starter's own servlet filter, so order the wide-event filter below after that one, or `Span.current()` is not yet the server span.
+
 ## Wide event and `enrich()`
 
-The event's contents follow the embedded `logging-best-practices` rules; these are only the lines that tie it to the trace. Give the filter the highest precedence, so its `finally` sees the final status.
+The event's contents follow the embedded `logging-best-practices` rules; these are only the lines that tie it to the trace. Give the filter the highest precedence (with the agent; see the note above for the starter), so its `finally` sees the final status.
 
 ```java
 @Component
@@ -118,14 +124,17 @@ public class WideEventFilter extends OncePerRequestFilter {
         state.event().put("span_id", sc.getSpanId());
         state.event().put("trace_sampled", sc.isSampled());
         long started = System.nanoTime();
+        boolean escaped = false;
 
         try (Scope ignored = Context.current().with(RequestContext.KEY, state).makeCurrent()) {
             chain.doFilter(req, res);
         } catch (Exception e) {
+            escaped = true;
             state.event().put("error", Map.of("type", e.getClass().getSimpleName(), "message", String.valueOf(e.getMessage())));
             throw e;
         } finally {
-            int status = res.getStatus();
+            // An exception that escapes leaves the status at 200 here; the container sets 500 afterwards.
+            int status = escaped && !res.isCommitted() ? 500 : res.getStatus();
             state.event().put("status_code", status);
             state.event().put("outcome", status >= 500 || state.event().containsKey("error") ? "error" : "success");
             state.event().put("duration_ms", (System.nanoTime() - started) / 1_000_000.0);
@@ -143,6 +152,7 @@ public class WideEventFilter extends OncePerRequestFilter {
 public final class WideEvent {
     /** The one call handlers use to add business context: to the event, and to the root span. */
     public static void enrich(String key, Object value) {
+        if (value == null) return;   // ConcurrentHashMap rejects nulls; an absent field says the same
         RequestContext.current().ifPresent(s -> {
             s.event().put(key, value);
             s.root().setAttribute(key, String.valueOf(value));   // flatten nested values to dotted keys first
@@ -152,6 +162,8 @@ public final class WideEvent {
 ```
 
 **Swallowed errors.** Spring resolves handler exceptions into responses inside `DispatcherServlet`, so the filter's `catch` rarely runs. Record the exception where it is handled: in the project's `@ControllerAdvice`, call `WideEvent.enrich("error", ...)`. The status-code check catches anything left.
+
+**Async requests.** For `DeferredResult`, `Callable`, SSE and other async dispatches, the filter's `finally` runs when the first thread returns, before the response is finished, and `OncePerRequestFilter` skips the async dispatch by default. Status and duration are then wrong. If the project uses async requests, emit the event from an `AsyncListener.onComplete` registered when `req.isAsyncStarted()` is true, and only emit in `finally` otherwise.
 
 ## Lint rules
 

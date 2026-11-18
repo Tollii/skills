@@ -7,7 +7,7 @@ Written for .NET 8+ and the `OpenTelemetry.*` 1.x packages, and **not compiled**
 Two things differ from TypeScript:
 
 - **.NET's tracing API is `System.Diagnostics.Activity`.** OpenTelemetry .NET builds on it: an `Activity` is a span, an `ActivitySource` is a tracer. Only the telemetry module touches `ActivitySource`.
-- **There are no function wrappers at the definition**, so the method body *is* the wrapper: an expression-bodied member that hands its work to `Traced.Run`. That keeps the span at the definition, ends it on every path and records errors.
+- **There are no function wrappers at the definition**, so the method body *is* the wrapper: an expression-bodied member that hands its work to `Traced.Run` (or `Traced.RunSync` for a synchronous method). That keeps the span at the definition, ends it on every path and records errors.
 
 Packages: `OpenTelemetry.Extensions.Hosting`, `OpenTelemetry.Instrumentation.AspNetCore`, `OpenTelemetry.Instrumentation.Http`, `OpenTelemetry.Exporter.OpenTelemetryProtocol`, `OpenTelemetry.Exporter.Console`.
 
@@ -58,16 +58,14 @@ public static class Traced
         [CallerFilePath] string file = "",
         [CallerMemberName] string member = "")
     {
-        // "ReceiptService.GetReceiptAsync": file name is the class name by C# convention.
-        using var activity = Source.StartActivity($"{Path.GetFileNameWithoutExtension(file)}.{member}");
+        using var activity = Start(file, member);
         try
         {
             return await work();
         }
         catch (Exception ex)
         {
-            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-            activity?.AddException(ex);   // .NET 9+; on .NET 8 use OpenTelemetry's RecordException
+            Fail(activity, ex);
             throw;
         }
     }
@@ -77,8 +75,42 @@ public static class Traced
         [CallerFilePath] string file = "",
         [CallerMemberName] string member = "")
         => await Run(async () => { await work(); return true; }, file, member);
+
+    /// For synchronous I/O methods. A separate name, so a lambda never has to
+    /// choose between the sync and async overloads.
+    public static T RunSync<T>(
+        Func<T> work,
+        [CallerFilePath] string file = "",
+        [CallerMemberName] string member = "")
+    {
+        using var activity = Start(file, member);
+        try
+        {
+            return work();
+        }
+        catch (Exception ex)
+        {
+            Fail(activity, ex);
+            throw;
+        }
+    }
+
+    // "ReceiptService.GetReceiptAsync": file name is the class name by C# convention.
+    private static Activity? Start(string file, string member)
+        => Source.StartActivity($"{Path.GetFileNameWithoutExtension(file)}.{member}");
+
+    private static void Fail(Activity? activity, Exception ex)
+    {
+        activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+        // AddException comes with System.Diagnostics.DiagnosticSource 9: built into .NET 9,
+        // and pulled in on .NET 8 by OpenTelemetry 1.10+. On older versions use
+        // OpenTelemetry's RecordException extension instead.
+        activity?.AddException(ex);
+    }
 }
 ```
+
+`Run` covers `Task` and `Task<T>`, and `RunSync` covers synchronous methods. A method that returns `ValueTask` or `ValueTask<T>` needs its own overload with the same body; add it when the project has such methods on its I/O layers.
 
 At the definition:
 
@@ -93,12 +125,16 @@ public Task<Receipt> GetReceiptAsync(string id) => Traced.Run(async () =>
 
 The middleware creates one `RequestState` per unit of work and puts it in an `AsyncLocal`. Code deeper in the request mutates that same object, so changes are visible everywhere; an `AsyncLocal` *value* set in a child method would not flow back up.
 
+The two maps are `ConcurrentDictionary`, because one request can run branches in parallel (`Task.WhenAll`): one branch starts a span, which reads `Fields`, while another sets a field. A plain `Dictionary` throws "Collection was modified" there.
+
 ```csharp
+using System.Collections.Concurrent;
+
 public sealed class RequestState(Activity? root)
 {
     public Activity? Root { get; } = root;
-    public Dictionary<string, object?> Fields { get; } = new();   // request.id, user.id, tenant.id, ...
-    public Dictionary<string, object?> Event { get; } = new();    // the wide event
+    public ConcurrentDictionary<string, object?> Fields { get; } = new();   // request.id, user.id, tenant.id, ...
+    public ConcurrentDictionary<string, object?> Event { get; } = new();    // the wide event
 }
 
 public static class RequestContext
@@ -144,6 +180,7 @@ public sealed class WideEventMiddleware(RequestDelegate next, ILogger<WideEventM
         state.Event["trace_sampled"] = root?.Recorded ?? false;
         RequestContext.Set("request.id", http.TraceIdentifier);
         var started = Stopwatch.GetTimestamp();
+        var escaped = false;
 
         try
         {
@@ -151,38 +188,45 @@ public sealed class WideEventMiddleware(RequestDelegate next, ILogger<WideEventM
         }
         catch (Exception ex)
         {
-            state.Event["error"] = new { type = ex.GetType().Name, message = ex.Message };
+            escaped = true;
+            state.Event["error.type"] = ex.GetType().Name;
+            state.Event["error.message"] = ex.Message;
             throw;
         }
         finally
         {
-            var status = http.Response.StatusCode;
+            // An exception that escapes every handler leaves the status at 200 here;
+            // the server sets 500 after this middleware has returned.
+            var status = escaped && !http.Response.HasStarted ? 500 : http.Response.StatusCode;
             state.Event["status_code"] = status;
-            state.Event["outcome"] = status >= 500 || state.Event.ContainsKey("error") ? "error" : "success";
+            state.Event["outcome"] = status >= 500 || state.Event.ContainsKey("error.type") ? "error" : "success";
             state.Event["duration_ms"] = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
             if (status >= 500) root?.SetStatus(ActivityStatusCode.Error);
 
             // A list of key-value pairs as the state is written as fields by the JSON
             // console formatter and by Serilog; check the project's provider does too.
-            logger.Log(LogLevel.Information, default, state.Event.ToList(), null, (_, _) => "request");
+            // ToArray() on a ConcurrentDictionary is a consistent snapshot; LINQ's ToList() is not.
+            logger.Log(LogLevel.Information, default, state.Event.ToArray(), null, (_, _) => "request");
         }
     }
 }
 
 public static class WideEvent
 {
-    /// The one function handlers call to add business context: to the event,
-    /// and flattened to dotted keys on the root span.
+    /// The one function handlers call to add business context: to the event
+    /// and to the root span. Values are primitives under dotted keys.
     public static void Enrich(string key, object? value)
     {
         if (RequestContext.State is not { } s) return;
         s.Event[key] = value;
-        s.Root?.SetTag(key, value);   // flatten nested objects to "user.id" etc. before this
+        s.Root?.SetTag(key, value);
     }
 }
 ```
 
-**Swallowed errors.** Registered first, the middleware's `catch` only runs for exceptions nothing handled. `UseExceptionHandler`, `IExceptionHandler` and MVC exception filters turn the rest into responses before it sees them, so record the exception where it is handled: in the project's `IExceptionHandler`, call `WideEvent.Enrich("error", new { type = ..., message = ... })`. The status-code check catches anything left.
+**Flat keys, primitive values.** Write nested data as dotted keys (`user.id`, `error.type`), never as an object. The JSON console formatter writes an object value as its `ToString()` text, and span tags drop or stringify it. If the project's log provider does serialize objects, the event may nest, but the root span still needs the flat form.
+
+**Swallowed errors.** Registered first, the middleware's `catch` only runs for exceptions nothing handled. `UseExceptionHandler`, `IExceptionHandler` and MVC exception filters turn the rest into responses before it sees them, so record the exception where it is handled: in the project's `IExceptionHandler`, call `WideEvent.Enrich("error.type", ...)` and `WideEvent.Enrich("error.message", ...)`. The status-code check catches anything left.
 
 ## Lint rules
 
@@ -194,7 +238,7 @@ public static class WideEvent
   ```
 
   Treat `RS0030` as an error.
-- **I/O methods are traced.** No off-the-shelf analyzer checks that a method body is `Traced.Run(...)`. Write a small Roslyn analyzer, or a test that parses the I/O layers' source with `Microsoft.CodeAnalysis.CSharp` and fails on any public method whose body is not a `Traced.Run` call. The layers come from the conventions doc.
+- **I/O methods are traced.** No off-the-shelf analyzer checks that a method body is `Traced.Run(...)` or `Traced.RunSync(...)`. Write a small Roslyn analyzer, or a test that parses the I/O layers' source with `Microsoft.CodeAnalysis.CSharp` and fails on any public method whose body is not a `Traced.Run` or `Traced.RunSync` call. The layers come from the conventions doc.
 
 ## Tests
 
