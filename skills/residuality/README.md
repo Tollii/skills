@@ -1,6 +1,6 @@
 # residuality
 
-An agent skill for designing and checking software architecture with Barry O'Reilly's [Residuality Theory](https://www.jfokus.se/jfokus22-preso/Residuality-Theory.pdf). It merges the former `residuality` and `contagion-analysis` skills.
+An agent skill for designing and checking software architecture with Barry O'Reilly's [Residuality Theory](https://www.jfokus.se/jfokus22-preso/Residuality-Theory.pdf).
 
 ## What it is
 
