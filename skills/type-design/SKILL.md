@@ -94,7 +94,7 @@ For a multi-stage pipeline in a language with closed unions, see [the F# example
 ## Guards and ripple effects
 
 - If the project has a lint rule, contract check or baseline file for lifecycle bags, run it, and remove a site's baseline entry in the same change that fixes it.
-- A contract change regenerates its clients (OpenAPI generators, shared packages); change them in the same merge request.
+- A contract change regenerates its clients (OpenAPI generators, shared packages); change them in the same PR.
 - A stored shape change needs a migration, or a parser that builds the union from the old rows.
 
 ## When not to add a type
@@ -113,4 +113,4 @@ For collaborator interfaces, adapters or brittle interaction tests, use `collabo
 
 When reviewing or auditing, give for each finding: the responsibility in one sentence; the type and its location with every writer and reader; the states and their fields; the proposed union and transitions; which checks remain necessary (facts that can change); what changes in contracts, generated clients, storage, screens and tests; and the concrete harm, such as a guard that hides an impossible state, a cast, or two readers that disagree. Rank findings by harm and say which can ship as a small change and which need a design decision.
 
-When implementing, change one responsibility per merge request and delete the checks, fallbacks and `?.` that the new type makes unnecessary. Those deletions are the evidence that the type is right.
+When implementing, change one responsibility per PR and delete the checks, fallbacks and `?.` that the new type makes unnecessary. Those deletions are the evidence that the type is right.

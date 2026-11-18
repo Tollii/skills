@@ -11,7 +11,7 @@ Fill `assets/incidence-matrix.xlsx` (sheets Incidence and DSM; totals and K are 
 3. **Mark.** Put 1 where the stressor touches the part: it breaks, degrades or needs a change. Sum rows and columns. K ≈ total marks ÷ parts.
 4. **DSM (optional).** Parts × parts, 1 where the row depends on the column. Shapes: diagonal only is independent; a few off-diagonal marks is interdependent; dense is complex; full is Markov, where everything depends on everything.
 5. **Read** the matrix (below) and **move boundaries**. Re-mark after each move. Stop when long rows have shortened, heavy columns have thinned and K has fallen, without the DSM going diagonal-only (that is rigid, not critical).
-6. **For an MR or diff.** Mark only the rows the change touches, before and after. A row that gained a mark is new coupling: name the external fact that now breaks one more part. A column that gained marks is a part that took on an assumption it did not have.
+6. **For a PR or diff.** Mark only the rows the change touches, before and after. A row that gained a mark is new coupling: name the external fact that now breaks one more part. A column that gained marks is a part that took on an assumption it did not have.
 
 ## Reading the matrix
 
@@ -24,4 +24,4 @@ Fill `assets/incidence-matrix.xlsx` (sheets Incidence and DSM; totals and K are 
 
 ## Output
 
-The two tables; the readings as a short list, each naming the stressor, the parts and the boundary move; and K before and after. For an MR, one line per row that changed.
+The two tables; the readings as a short list, each naming the stressor, the parts and the boundary move; and K before and after. For a PR, one line per row that changed.

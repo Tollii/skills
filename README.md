@@ -50,7 +50,7 @@ its `.claude/settings.json`.
 | [type-design](skills/type-design) | Give each responsibility a type whose shape makes the wrong state impossible: lifecycles as discriminated unions, parse once at the boundary, typed failures. |
 | [collaborator-roles](skills/collaborator-roles) | Design the interfaces a class depends on from what it needs, wrap vendor APIs behind them, and mock those roles, not concrete objects. After *Mock Roles, Not Objects* (Freeman, Pryce, Mackinnon, Walnes 2004). |
 | [code-design-review](skills/code-design-review) | A design-risk pass to run alongside a normal code review: checks a diff or module for code smells that carry real risk (double side effects, check-then-act races, changes spread across many files, behavior in the wrong place). Digs deeper with the matching skill and proposes the smallest fix, or a simpler, better-typed design when one exists. |
-| [residuality](skills/residuality) | Residuality Theory after Barry O'Reilly: stress a naive architecture with random stressors and keep what survives, or run a quick contagion check (incidence matrix) on a design, codebase or MR to find where one external fact breaks several parts. |
+| [residuality](skills/residuality) | Residuality Theory after Barry O'Reilly: stress a naive architecture with random stressors and keep what survives, or run a quick contagion check (incidence matrix) on a design, codebase or PR to find where one external fact breaks several parts. |
 | [statechart](skills/statechart) | Check a TLA+ model of a system that moves between states and draw it as a Mermaid statechart, with the shortest path to each state that breaks a rule. |
 
 ### Testing
@@ -75,9 +75,12 @@ its `.claude/settings.json`.
 ## Credits and licenses
 
 My own skills are MIT licensed (see [LICENSE](LICENSE)). These come from other people's MIT-licensed
-work, most of them rewritten to fit how I use them; each folder keeps its original license:
+work, most of them rewritten to fit how I use them. A skill taken from someone else keeps the
+author's license as the `LICENSE` file in its folder, with an `UPSTREAM.md` naming the source revision.
+observability is my own skill under my license; the files it embeds keep their author's license, as
+its `LICENSE` and `vendor/logging-best-practices/UPSTREAM.md` state:
 
 - **make-interfaces-feel-better**: [jakubkrehel/make-interfaces-feel-better](https://github.com/jakubkrehel/make-interfaces-feel-better), © Jakub Krehel
-- **statechart**: [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan ([@poteto](https://x.com/poteto)), unchanged
+- **statechart**: [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan ([@poteto](https://x.com/poteto)), unchanged apart from one removed frontmatter line
 - **test-audit**: [openclaw/openclaw](https://github.com/openclaw/openclaw/tree/main/.agents/skills/test-audit), © OpenClaw Foundation, rewritten to work in any project
 - **observability**: its logging rules are Boris Tane's [`logging-best-practices`](https://github.com/boristane/agent-skills/tree/main/skills/logging-best-practices) skill, © Boris Tane, embedded unchanged in `vendor/logging-best-practices`

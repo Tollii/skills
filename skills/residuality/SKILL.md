@@ -10,9 +10,9 @@ Design by subtraction: hit a first design with stressors you never rank by likel
 ## Pick the mode
 
 - **Full residual analysis** for a new system or a major redesign: the [procedure](#procedure) below. Hours of work and a stakeholder conversation.
-- **Contagion check** for "where is this coupled?" on a design, a codebase or one MR: go straight to [references/contagion.md](references/contagion.md). Minutes of work, 20 to 40 stressors or only the rows a diff touches.
+- **Contagion check** for "where is this coupled?" on a design, a codebase or one PR: go straight to [references/contagion.md](references/contagion.md). Minutes of work, 20 to 40 stressors or only the rows a diff touches.
 
-If the request doesn't say which, use the contagion check for code and MRs and the full analysis for designs, and say which you chose.
+If the request doesn't say which, use the contagion check for code and PRs and the full analysis for designs, and say which you chose.
 
 Read [references/theory.md](references/theory.md) once per session for the definitions and the reasoning. [references/sources.md](references/sources.md) has the primary material. Assets: `assets/stressor-sheet.xlsx` (or the CSV twin) for the full analysis, `assets/incidence-matrix.xlsx` for the matrices.
 
