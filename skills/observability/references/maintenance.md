@@ -26,7 +26,7 @@ Do not use the date the helper or its lint rule last changed. They change for un
    - New handlers enrich the wide event with business context, not only the fields the middleware sets. Judge new logging against the embedded [logging-best-practices](../vendor/logging-best-practices/SKILL.md) skill, read again for the pass, not against memory of it.
    - New kinds of work (a new job, consumer or webhook) have their own root span and their own event.
    - New outgoing calls carry trace context, from clients as well as servers.
-   - New I/O code sits inside the I/O layers the conventions doc lists, or the list is updated.
+   - New I/O code sits inside the traced layers the conventions doc lists, or the list is updated.
    - A lint baseline, if the project has one, has only shrunk.
    - New fields follow the schema, and none of them holds personal data or secrets.
    - New feature flags are recorded on the event.

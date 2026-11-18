@@ -27,7 +27,9 @@ Why definitions and not inline spans: every caller gets the span for free, nobod
 
 Trace what crosses a boundary: every route handler and other entry point, every middleware, and every function that makes a network, database, queue, cache or file call. Pure computation is not traced; a span per helper costs money and buries the spans that matter.
 
-Make the boundary mechanical so a linter can check it. Name the **I/O layers** in the conventions doc: folders (`src/db/`, `src/clients/`, `handlers/`), naming patterns (`*Repository`, `*Client`, `*Gateway`), or both. The rule the linter enforces is: every exported function in an I/O layer, and every entry point, is traced. An I/O call that lives outside those layers is a sign the layer list or the code needs moving.
+**Don't trace an I/O call twice.** Where an instrumentation library already spans an I/O library (the Java agent and .NET's instrumentation packages cover JDBC, EF Core, SqlClient, HTTP clients, gRPC and most messaging clients; Node has equivalents), those calls are traced already. Wrapping the repository around them adds a second span with nothing new on it. Trace the business operation that calls them instead (a service method, use case, job or consumer), and keep manual spans for I/O that no library covers.
+
+Make the boundary mechanical so a linter can check it. Name the **traced layers** in the conventions doc: I/O layers where nothing traces the I/O for you, and business-operation layers where something does. Use folders (`src/db/`, `src/services/`, `handlers/`), naming patterns (`*Repository`, `*Service`, `*Client`), or both. The rule the linter enforces is: every exported function in a traced layer, and every entry point, is traced. An I/O call that lives outside those layers is a sign the layer list or the code needs moving.
 
 Frameworks often take handlers as inline functions, which escape a rule about exported functions. Hoist each one into a named, exported, traced function and register that. The middleware that opens the root span is the exception: the root span is its span, so it needs no second one.
 
@@ -37,7 +39,7 @@ Stable and low-cardinality, such as `module.function` or the route pattern. Ids 
 
 ### 5. Request context on every span
 
-Keep the request's identity in request-scoped context (AsyncLocalStorage, or the framework's equivalent) and register a span processor that copies it onto each span as it starts. The fields are:
+Keep the request's identity in request-scoped context (AsyncLocalStorage, or the framework's equivalent) and have it copied onto each span as it starts: by a span processor you register, or by configuration where the SDK offers it (the Java agent copies baggage to spans; see [java.md](../assets/java.md#request-context)). The fields are:
 
 - request id
 - user id
@@ -63,7 +65,7 @@ Find out what the framework does with an error a handler throws. Many catch it a
 
 In whatever linter the project uses (a custom ESLint rule, a Biome plugin, or a small script wired into the lint command and CI), enforce two things:
 
-- An exported function in an I/O layer, or an entry point, that is not wrapped by the tracing helper is an error.
+- An exported function in a traced layer, or an entry point, that is not wrapped by the tracing helper is an error.
 - Opening a span anywhere but the tracing module is an error (`startSpan`, `startActiveSpan`, `ActivitySource`, `Tracer`, whatever the language uses).
 
 For a project that already has many violations, see [adopt.md](adopt.md#lint-rules-on-an-existing-codebase) for landing the rule with a baseline.
@@ -96,7 +98,7 @@ Then run lint, typecheck and the test suite. If you can start the app, send it o
 
 - [ ] The lint rule runs in CI and reports nothing.
 - [ ] The four tests above pass.
-- [ ] The conventions doc exists and covers the backend, local viewing, the helper, the I/O layers, the opt-out, the request-context fields and the sampling decision.
+- [ ] The conventions doc exists and covers the backend, local viewing, the helper, the traced layers, the opt-out, the request-context fields and the sampling decision.
 - [ ] The PR description names the env vars to set and anything that could not be traced.
 
 ## References

@@ -6,7 +6,10 @@ Written for Java 17+, Spring Boot 3, the OpenTelemetry Java agent 2.x and SLF4J 
 
 Two things differ from TypeScript:
 
-- **The Java agent does the SDK setup.** It instruments servlets, HTTP clients, JDBC and messaging without code changes, and reads the standard `OTEL_*` env vars. Where an agent is not allowed (some native-image or locked-down runtimes), use the `opentelemetry-spring-boot-starter`, which covers the common libraries from inside the app. The two paths differ in one place, [how request context reaches later spans](#request-context); everything else here is the same for both.
+- **Setup is not code.** Pick one of three paths; the rest of this file is the same for all of them except where noted:
+  - **The Java agent (the default).** The OpenTelemetry docs recommend it for Spring Boot. It instruments servlets, HTTP clients, JDBC and messaging without code changes and is configured only through `OTEL_*` env vars, so the application has no telemetry setup at all.
+  - **The community `opentelemetry-spring-boot-starter`.** For GraalVM native images, where the agent doesn't work, when agent startup time matters, or when the team wants configuration in `application.yml`.
+  - **Spring Boot 4's own `spring-boot-starter-opentelemetry`.** The Spring-native path, built on Micrometer Observation. Two catches: it also pushes OTLP metrics to localhost by default, which fails with no collector unless `management.otlp.metrics.export.enabled=false`, and its property names changed from Spring Boot 3. Check the reference docs for the exact keys of the version in use.
 - **Tracing at the definition is an annotation:** `@WithSpan` from `opentelemetry-instrumentation-annotations`. It names the span `Class.method`, ends it on every path and records exceptions.
 
 ## SDK setup
@@ -33,17 +36,19 @@ Spans still record and propagate with no exporter, so trace ids keep working.
 Dependency: `io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations`.
 
 ```java
-@Repository
-public class ReceiptRepository {
+@Service
+public class ReceiptService {
 
     @WithSpan
-    public Receipt getReceipt(@SpanAttribute("receipt.id") String id) {
+    public Receipt approve(@SpanAttribute("receipt.id") String id) {
         // ...
     }
 }
 ```
 
-The agent already gives every request a server span, so controllers need no annotation; put `@WithSpan` on the I/O layers and other entry points (scheduled jobs, listeners) the agent does not cover.
+The agent already gives every request a server span and every JDBC, HTTP-client and messaging call its own span, so controllers and repositories need no annotation. Put `@WithSpan` on business operations (services, use cases), scheduled jobs and listeners, and on I/O no instrumentation covers.
+
+With either starter, `@WithSpan` also needs `spring-boot-starter-aop`, and it works only on Spring beans: a method that calls another method in the same class gets no span for the second one. Under the agent, annotations work on any class. `otel.instrumentation.annotations.enabled=false` turns them off without a code change.
 
 ## Request context
 
@@ -75,38 +80,46 @@ public record RequestState(Span root, Map<String, String> fields, Map<String, Ob
 }
 ```
 
-How a field reaches spans that start *after* it was set depends on which path runs the SDK.
+`set()` reaches the root span and the span current at that moment. To put the fields on every span that starts later as well, use baggage and the baggage span processor, which the agent and the community starter both include and switch on through configuration:
 
-**With the Java agent: `set()` only, no span processor.** `RequestContext.set()` writes each field to the root span and to the span current at that moment, and the agent path relies on that alone. Set identity fields as early as they are known (in the filter or the auth layer), so the root span and the event carry them; spans that start later do not get them. Do not add a `SpanProcessor` in an agent extension jar to copy the fields: an extension is loaded by the agent's class loader and gets the agent's own copy of `Context`, where a `ContextKey` created in application code is not visible, so the processor would copy nothing and report no error.
+```sh
+OTEL_JAVA_EXPERIMENTAL_SPAN_ATTRIBUTES_COPY_FROM_BAGGAGE_INCLUDE=request.id,user.id,tenant.id
+OTEL_PROPAGATORS=tracecontext
+```
 
-**With the Spring Boot starter (no agent): add a span processor.** The SDK runs inside the application, so a processor sees the same `ContextKey` and can copy the fields onto every span as it starts. Register it through an `AutoConfigurationCustomizerProvider` bean:
+The second line matters: with only `tracecontext` propagated, baggage never leaves the process, so user and tenant ids are not sent to other services. Baggage is immutable, so the fields go in with a scope that wraps the rest of the request. Do it in a filter placed after authentication, where the identity is known:
 
 ```java
-public final class RequestContextProcessor implements SpanProcessor {
-    @Override public void onStart(Context parent, ReadWriteSpan span) {
-        RequestState state = parent.get(RequestContext.KEY);
-        if (state != null) state.fields().forEach(span::setAttribute);
+@Component
+@Order(SecurityProperties.DEFAULT_FILTER_ORDER + 1)   // after Spring Security
+public class RequestContextFilter extends OncePerRequestFilter {
+    @Override
+    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
+            throws ServletException, IOException {
+        var baggage = Baggage.current().toBuilder();
+        put(baggage, "request.id", req.getRequestId());
+        put(baggage, "user.id", currentUserId());     // from the security context
+        put(baggage, "tenant.id", currentTenantId());
+        try (Scope ignored = baggage.build().makeCurrent()) {
+            chain.doFilter(req, res);
+        }
     }
-    @Override public boolean isStartRequired() { return true; }
-    @Override public void onEnd(ReadableSpan span) {}
-    @Override public boolean isEndRequired() { return false; }
-}
 
-@Configuration
-public class TelemetryConfig {
-    @Bean
-    public AutoConfigurationCustomizerProvider requestContextOnEverySpan() {
-        return c -> c.addTracerProviderCustomizer((builder, config) ->
-            builder.addSpanProcessor(new RequestContextProcessor()));
+    private static void put(BaggageBuilder b, String key, String value) {
+        if (value == null) return;
+        b.put(key, value);
+        RequestContext.set(key, value);   // the root span started before this filter
     }
 }
 ```
 
-With the starter the server span is opened by the starter's own servlet filter, so order the wide-event filter below after that one, or `Span.current()` is not yet the server span.
+A field that only becomes known deeper in the request (an entity id) goes through `RequestContext.set()` alone; it reaches the root span and the current span, which is usually enough. With Spring Boot 4's own starter, check its docs for the baggage-to-span setting before relying on it; if there is none, use `set()` alone.
+
+Do not write a span processor in an agent extension jar for this: the extension is loaded by the agent's class loader, where a `ContextKey` created in application code is not visible, so it would copy nothing and report no error.
 
 ## Wide event and `enrich()`
 
-The event's contents follow the embedded `logging-best-practices` rules; these are only the lines that tie it to the trace. Give the filter the highest precedence (with the agent; see the note above for the starter), so its `finally` sees the final status.
+The event's contents follow the embedded `logging-best-practices` rules; these are only the lines that tie it to the trace. Give the filter the highest precedence, so its `finally` sees the final status. With a starter, the server span is opened by the starter's own filter, so place this one after that.
 
 ```java
 @Component
@@ -130,13 +143,14 @@ public class WideEventFilter extends OncePerRequestFilter {
             chain.doFilter(req, res);
         } catch (Exception e) {
             escaped = true;
-            state.event().put("error", Map.of("type", e.getClass().getSimpleName(), "message", String.valueOf(e.getMessage())));
+            state.event().put("error.type", e.getClass().getSimpleName());
+            state.event().put("error.message", String.valueOf(e.getMessage()));
             throw e;
         } finally {
             // An exception that escapes leaves the status at 200 here; the container sets 500 afterwards.
             int status = escaped && !res.isCommitted() ? 500 : res.getStatus();
             state.event().put("status_code", status);
-            state.event().put("outcome", status >= 500 || state.event().containsKey("error") ? "error" : "success");
+            state.event().put("outcome", status >= 500 || state.event().containsKey("error.type") ? "error" : "success");
             state.event().put("duration_ms", (System.nanoTime() - started) / 1_000_000.0);
             if (status >= 500) root.setStatus(StatusCode.ERROR);
 
@@ -155,13 +169,13 @@ public final class WideEvent {
         if (value == null) return;   // ConcurrentHashMap rejects nulls; an absent field says the same
         RequestContext.current().ifPresent(s -> {
             s.event().put(key, value);
-            s.root().setAttribute(key, String.valueOf(value));   // flatten nested values to dotted keys first
+            s.root().setAttribute(key, String.valueOf(value));   // flat keys, primitive values: "user.id", not a map
         });
     }
 }
 ```
 
-**Swallowed errors.** Spring resolves handler exceptions into responses inside `DispatcherServlet`, so the filter's `catch` rarely runs. Record the exception where it is handled: in the project's `@ControllerAdvice`, call `WideEvent.enrich("error", ...)`. The status-code check catches anything left.
+**Swallowed errors.** Spring resolves handler exceptions into responses inside `DispatcherServlet`, so the filter's `catch` rarely runs. Record the exception where it is handled: in the project's `@ControllerAdvice`, call `WideEvent.enrich("error.type", ...)` and `WideEvent.enrich("error.message", ...)`. The status-code check catches anything left.
 
 **Async requests.** For `DeferredResult`, `Callable`, SSE and other async dispatches, the filter's `finally` runs when the first thread returns, before the response is finished, and `OncePerRequestFilter` skips the async dispatch by default. Status and duration are then wrong. If the project uses async requests, emit the event from an `AsyncListener.onComplete` registered when `req.isAsyncStarted()` is true, and only emit in `finally` otherwise.
 
@@ -173,11 +187,11 @@ ArchUnit tests, run with the normal test suite:
 @AnalyzeClasses(packages = "com.example")
 class ObservabilityRules {
 
-    // I/O layers come from the conventions doc.
+    // Traced layers come from the conventions doc: business operations, plus I/O no instrumentation covers.
     @ArchTest
-    static final ArchRule io_methods_are_traced =
+    static final ArchRule business_operations_are_traced =
         methods().that().arePublic()
-            .and().areDeclaredInClassesThat().resideInAnyPackage("..repository..", "..client..")
+            .and().areDeclaredInClassesThat().resideInAnyPackage("..service..", "..usecase..")
             .should().beAnnotatedWith(WithSpan.class);
 
     @ArchTest

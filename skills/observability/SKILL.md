@@ -37,13 +37,13 @@ The assets are starting points to adapt to the project's framework and naming, n
 
 The rules are the same everywhere; only the idiom changes.
 
-| Language | Traced at the definition | Request context | Lint rules |
-| --- | --- | --- | --- |
-| TypeScript | `traced()` wrapper | `AsyncLocalStorage` | ESLint or Biome rule, or a script |
-| C# | `Traced.Run(...)` as the method body | `AsyncLocal` holding a shared object | BannedApiAnalyzers, plus a Roslyn check |
-| Java | `@WithSpan` | OpenTelemetry `Context` key | ArchUnit tests |
-| Python | `@tracer.start_as_current_span(...)` as a decorator | `contextvars` | ruff (`T20`, banned-api) |
-| Go | `ctx, span := tracer.Start(ctx, ...)` and `defer span.End()` as the first lines | `context.Context` | forbidigo, or a `go/analysis` pass |
+| Language | Setup | Traced at the definition | Request context | Lint rules |
+| --- | --- | --- | --- | --- |
+| TypeScript | One module loaded first | `traced()` wrapper | `AsyncLocalStorage` | ESLint or Biome rule, or a script |
+| C# | `builder.AddServiceDefaults()` (Aspire's, or the same pattern) | `Traced.Run(...)` as the method body | `AsyncLocal` holding a shared object | BannedApiAnalyzers, plus a Roslyn check |
+| Java | The Java agent and `OTEL_*` env vars; no code | `@WithSpan` | Baggage, copied to spans by configuration | ArchUnit tests |
+| Python | `opentelemetry-instrument` or one module | `@tracer.start_as_current_span(...)` as a decorator | `contextvars` | ruff (`T20`, banned-api) |
+| Go | One package called from `main` | `ctx, span := tracer.Start(ctx, ...)` and `defer span.End()` as the first lines | `context.Context` | forbidigo, or a `go/analysis` pass |
 
 ## Step 1: find out where the project stands
 

@@ -9,33 +9,61 @@ Two things differ from TypeScript:
 - **.NET's tracing API is `System.Diagnostics.Activity`.** OpenTelemetry .NET builds on it: an `Activity` is a span, an `ActivitySource` is a tracer. Only the telemetry module touches `ActivitySource`.
 - **There are no function wrappers at the definition**, so the method body *is* the wrapper: an expression-bodied member that hands its work to `Traced.Run` (or `Traced.RunSync` for a synchronous method). That keeps the span at the definition, ends it on every path and records errors.
 
-Packages: `OpenTelemetry.Extensions.Hosting`, `OpenTelemetry.Instrumentation.AspNetCore`, `OpenTelemetry.Instrumentation.Http`, `OpenTelemetry.Exporter.OpenTelemetryProtocol`, `OpenTelemetry.Exporter.Console`.
+Packages: `OpenTelemetry.Extensions.Hosting`, `OpenTelemetry.Instrumentation.AspNetCore`, `OpenTelemetry.Instrumentation.Http`, `OpenTelemetry.Exporter.OpenTelemetryProtocol`, `OpenTelemetry.Exporter.Console`, plus the instrumentation package for each I/O library the project uses (`OpenTelemetry.Instrumentation.SqlClient`, `OpenTelemetry.Instrumentation.EntityFrameworkCore`, gRPC, Redis and so on).
 
-## SDK setup (`Program.cs`)
+## SDK setup: one call in `Program.cs`
+
+Keep every line of setup in one extension method in its own project, so a service's `Program.cs` has a single line and daily work never touches telemetry. This is the pattern .NET Aspire uses: its `ServiceDefaults` project has `AddServiceDefaults()`, which calls `ConfigureOpenTelemetry()`.
+
+- **The project already uses Aspire:** don't add a second setup. Add `Traced.SourceName`, the request-context processor and any extra instrumentation inside its `ConfigureOpenTelemetry()`, and keep the rest of this file.
+- **It doesn't:** create a small shared project (`<App>.ServiceDefaults` or `<App>.Telemetry`) with the method below, and reference it from every service.
 
 ```csharp
-var otlpEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
+// Program.cs
+builder.AddServiceDefaults();
+```
 
-builder.Services.AddOpenTelemetry()
-    // OTEL_SERVICE_NAME and OTEL_RESOURCE_ATTRIBUTES are read by the default resource.
-    .ConfigureResource(r => r.AddAttributes(new Dictionary<string, object>
+```csharp
+// ServiceDefaults/Extensions.cs
+public static class Extensions
+{
+    public static TBuilder AddServiceDefaults<TBuilder>(this TBuilder builder)
+        where TBuilder : IHostApplicationBuilder
     {
-        ["service.version"] = Environment.GetEnvironmentVariable("SERVICE_VERSION") ?? "unknown",
-        ["vcs.ref.head.revision"] = Environment.GetEnvironmentVariable("COMMIT_SHA") ?? "unknown",
-        ["deployment.environment.name"] = builder.Environment.EnvironmentName,
-    }))
-    .WithTracing(t =>
-    {
-        t.AddSource(Traced.SourceName)
-         .AddAspNetCoreInstrumentation(o => o.RecordException = true)
-         .AddHttpClientInstrumentation()   // injects traceparent into outgoing calls
-         .AddProcessor(new RequestContextProcessor());
+        builder.ConfigureOpenTelemetry();
+        return builder;
+    }
 
-        // The OTLP exporter defaults to localhost when no endpoint is set, so add it
-        // only when one is. Without it, spans still record and propagate.
-        if (!string.IsNullOrEmpty(otlpEndpoint)) t.AddOtlpExporter();
-        else if (builder.Environment.IsDevelopment()) t.AddConsoleExporter();
-    });
+    public static TBuilder ConfigureOpenTelemetry<TBuilder>(this TBuilder builder)
+        where TBuilder : IHostApplicationBuilder
+    {
+        var otlpEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
+
+        builder.Services.AddOpenTelemetry()
+            // OTEL_SERVICE_NAME and OTEL_RESOURCE_ATTRIBUTES are read by the default resource.
+            .ConfigureResource(r => r.AddAttributes(new Dictionary<string, object>
+            {
+                ["service.version"] = Environment.GetEnvironmentVariable("SERVICE_VERSION") ?? "unknown",
+                ["vcs.ref.head.revision"] = Environment.GetEnvironmentVariable("COMMIT_SHA") ?? "unknown",
+                ["deployment.environment.name"] = builder.Environment.EnvironmentName,
+            }))
+            .WithTracing(t =>
+            {
+                t.AddSource(Traced.SourceName)
+                 .AddAspNetCoreInstrumentation(o => o.RecordException = true)
+                 .AddHttpClientInstrumentation()   // injects traceparent into outgoing calls
+                 .AddSqlClientInstrumentation()    // or EF Core, gRPC, Redis: whatever the project uses
+                 .AddProcessor(new RequestContextProcessor());
+
+                // The OTLP exporter defaults to localhost when no endpoint is set, so add it
+                // only when one is. Without it, spans still record and propagate.
+                if (!string.IsNullOrEmpty(otlpEndpoint)) t.AddOtlpExporter();
+                else if (builder.Environment.IsDevelopment()) t.AddConsoleExporter();
+            });
+
+        return builder;
+    }
+}
 ```
 
 Sampling comes from `OTEL_TRACES_SAMPLER` and `OTEL_TRACES_SAMPLER_ARG`; check that the installed SDK version reads them, or set `t.SetSampler(...)` from the same config values.
@@ -110,7 +138,7 @@ public static class Traced
 }
 ```
 
-`Run` covers `Task` and `Task<T>`, and `RunSync` covers synchronous methods. A method that returns `ValueTask` or `ValueTask<T>` needs its own overload with the same body; add it when the project has such methods on its I/O layers.
+`Run` covers `Task` and `Task<T>`, and `RunSync` covers synchronous methods. A method that returns `ValueTask` or `ValueTask<T>` needs its own overload with the same body; add it when the project has such methods on its traced layers.
 
 At the definition:
 
@@ -120,6 +148,10 @@ public Task<Receipt> GetReceiptAsync(string id) => Traced.Run(async () =>
     // ...
 });
 ```
+
+Put `Traced.Run` on business operations (services, use cases, jobs, consumers) and on I/O that no instrumentation package covers. A repository over EF Core or SqlClient needs none: the instrumentation already spans each query, and the service method that calls it gives the context.
+
+**Attributes instead of `Traced.Run`.** Community source generators let a method carry an attribute and generate the span code at compile time: [X39.Roslyn.OpenTelemetry](https://www.nuget.org/packages/X39.Roslyn.OpenTelemetry), [Purview.Telemetry.SourceGenerator](https://www.nuget.org/packages/Purview.Telemetry.SourceGenerator), and [AutoInstrument](https://www.nuget.org/packages/AutoInstrument) (which uses interceptors). They read better, but they are small projects. Use one only if the team accepts the dependency after checking its maintenance; `Traced.Run` needs nothing.
 
 ## Request context (`RequestContext.cs`)
 
@@ -238,7 +270,7 @@ public static class WideEvent
   ```
 
   Treat `RS0030` as an error.
-- **I/O methods are traced.** No off-the-shelf analyzer checks that a method body is `Traced.Run(...)` or `Traced.RunSync(...)`. Write a small Roslyn analyzer, or a test that parses the I/O layers' source with `Microsoft.CodeAnalysis.CSharp` and fails on any public method whose body is not a `Traced.Run` or `Traced.RunSync` call. The layers come from the conventions doc.
+- **Traced-layer methods are traced.** No off-the-shelf analyzer checks that a method body is `Traced.Run(...)` or `Traced.RunSync(...)`. Write a small Roslyn analyzer, or a test that parses the traced layers' source with `Microsoft.CodeAnalysis.CSharp` and fails on any public method in a traced layer whose body is not a `Traced.Run` or `Traced.RunSync` call. The layers come from the conventions doc.
 
 ## Tests
 

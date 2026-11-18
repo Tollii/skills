@@ -29,9 +29,9 @@ Last swept: <YYYY-MM-DD>
 
 <!-- Where the helper lives, one example of using it, and the lint rule that enforces it. -->
 
-### I/O layers
+### Traced layers
 
-<!-- The folders and naming patterns whose exported functions must be traced. The lint rule reads the same list. -->
+<!-- The folders and naming patterns whose exported functions must be traced, and which I/O libraries instrumentation packages already trace. The lint rule reads the same list. -->
 
 ### Opting a function out
 
