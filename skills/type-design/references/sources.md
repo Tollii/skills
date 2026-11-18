@@ -1,0 +1,6 @@
+# Sources
+
+- **Alexis King, [Parse, don't validate](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/)** (2019). The basis of this skill: weakening the return type versus strengthening the argument, parsers that keep what they checked, shotgun parsing, and the practical advice (precise data structures, pushing proof upward, one source of truth, suspicion of functions that return nothing). Examples are in Haskell, but the ideas carry to any typed language.
+- **Matt Parsons, [Type Safety Back and Forth](https://www.parsonsmatt.org/2017/10/11/type_safety_back_and_forth.html)** (2017). The post King recommends for a second worked example: pushing a constraint forward into the result type versus back into the arguments.
+- **Matt Noonan, [Ghosts of Departed Proofs](https://kataskeue.com/gdp.pdf)** (2018). A more advanced take, for invariants the basic techniques cannot capture. Read it only when a case truly needs more than a smart constructor.
+- **Momot, Bratus, Hallberg and Patterson, [The Seven Turrets of Babel](https://langsec.org/papers/langsec-cwes-secdev2016.pdf)** (IEEE SecDev 2016). The LangSec paper that defines shotgun parsing and why late-detected invalid input is a security risk.
