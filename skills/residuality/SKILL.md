@@ -1,6 +1,6 @@
 ---
 name: residuality
-description: Residual analysis and contagion analysis after Barry O'Reilly's Residuality Theory. Use when designing, reviewing or stress-testing ("burning down") an architecture, and when asking where a design, codebase or MR is coupled, which parts are overloaded, or whether a change adds coupling. Also when residuality, stressors, attractors, residues, contagion, incidence matrices or DSMs come up.
+description: Residuality Theory (Barry O'Reilly). Use to stress-test an architecture, or to check where a design, codebase or MR is coupled and whether a change adds coupling.
 ---
 
 # Residuality
