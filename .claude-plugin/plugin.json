@@ -1,0 +1,8 @@
+{
+  "name": "tollii",
+  "description": "Agent skills for design, testing, observability, UI and workflow.",
+  "author": { "name": "Tollii" },
+  "homepage": "https://github.com/Tollii/skills",
+  "repository": "https://github.com/Tollii/skills",
+  "license": "MIT"
+}

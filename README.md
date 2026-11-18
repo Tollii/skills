@@ -22,6 +22,25 @@ Or use the [skills CLI](https://github.com/vercel-labs/skills), which lets you p
 npx skills add Tollii/skills
 ```
 
+### As a plugin (Claude Code and Copilot CLI)
+
+The `tollii` plugin installs every skill at once, named `tollii:<skill>`:
+
+```text
+/plugin install tollii --marketplace Tollii/skills
+```
+
+On older Claude Code versions, and in Copilot CLI, add the marketplace first:
+
+```text
+/plugin marketplace add Tollii/skills
+/plugin install tollii@tollii
+```
+
+The plugin has no version, so `/plugin marketplace update tollii` pulls the latest `main`. Turn it off with
+`/plugin disable tollii@tollii`, or for one project by setting `"tollii@tollii": false` under `enabledPlugins` in
+its `.claude/settings.json`.
+
 ## Skills
 
 ### Design and architecture

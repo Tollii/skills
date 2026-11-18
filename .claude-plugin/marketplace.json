@@ -1,0 +1,12 @@
+{
+  "name": "tollii",
+  "owner": { "name": "Tollii" },
+  "metadata": { "description": "Agent skills for design, testing, observability, UI and workflow." },
+  "plugins": [
+    {
+      "name": "tollii",
+      "source": "./",
+      "description": "Every skill in Tollii/skills."
+    }
+  ]
+}
