@@ -77,7 +77,6 @@ its `.claude/settings.json`.
 
 | Skill | What it does |
 |---|---|
-| [file-pr](skills/file-pr) | File a concise PR: a title that says why it matters, then a body with the smallest visual of the change, before/after evidence and merge danger (one-way or two-way door, blast radius). |
 | [show-me](skills/show-me) | Explain the current topic with a diagram, code sketch or small HTML page when a visual helps. |
 
 `shared/design-principles.md` is a general design reference some of these skills draw on.
@@ -88,7 +87,6 @@ My own skills are MIT licensed (see [LICENSE](LICENSE)). These come from other p
 work, most of them rewritten to fit how I use them; each folder keeps its original license:
 
 - **make-interfaces-feel-better**: [jakubkrehel/make-interfaces-feel-better](https://github.com/jakubkrehel/make-interfaces-feel-better), © Jakub Krehel
-- **file-pr**: merged with [Matt Pocock](https://github.com/mattpocock)'s [`pr`](https://github.com/mattpocock/skills/tree/main/skills/engineering/pr) skill, © Matt Pocock (see its CREDITS.md)
 - **statechart**: [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan ([@poteto](https://x.com/poteto)), unchanged
 - **test-audit**: [openclaw/openclaw](https://github.com/openclaw/openclaw/tree/main/.agents/skills/test-audit), © OpenClaw Foundation, rewritten to work in any project
 - **logging-best-practices**: [boristane/agent-skills](https://github.com/boristane/agent-skills), © Boris Tane. `observability` embeds an unchanged copy in `vendor/`.
