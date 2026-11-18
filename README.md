@@ -49,8 +49,7 @@ its `.claude/settings.json`.
 |---|---|
 | [type-design](skills/type-design) | Give each responsibility a type whose shape makes the wrong state impossible: lifecycles as discriminated unions, parse once at the boundary, typed failures. |
 | [mock-roles-not-objects](skills/mock-roles-not-objects) | Design app-owned collaborator roles and focused interaction tests at adapters and third-party boundaries. |
-| [residuality](skills/residuality) | Residual analysis after Barry O'Reilly's Residuality Theory: stress a naive architecture with random stressors, find attractors, keep what survives. |
-| [contagion-analysis](skills/contagion-analysis) | Incidence- and dependency-matrix coupling analysis: where one external fact breaks several parts, and whether a change adds coupling. |
+| [residuality](skills/residuality) | Residuality Theory after Barry O'Reilly: stress a naive architecture with random stressors and keep what survives, or run a quick contagion check (incidence matrix) on a design, codebase or MR to find where one external fact breaks several parts. |
 | [statechart](skills/statechart) | Check a TLA+ model of a system that moves between states and draw it as a Mermaid statechart, with the shortest path to each state that breaks a rule. Runs only when asked. |
 
 ### Testing

@@ -20,5 +20,3 @@ Secondary:
 - Kauffman background: Gershenson, "Introduction to Random Boolean Networks"; Derrida and Pomeau (1986).
 
 Related skill elsewhere: nWave `nw-stress-analysis` (https://github.com/nWave-ai/nWave, skills/nw-stress-analysis/SKILL.md). Same source theory; differs from this skill by prioritising stressors by impact and stopping at 20–50 rows, both of which O'Reilly warns against.
-
-In this project: `residuality-theory-definition-2026-10-15.md` (what "burning" means) and `residuality-guide-2026-10-15.md` (long-form guide) in the residuality folder of the shared project files.
