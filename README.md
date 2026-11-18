@@ -66,11 +66,12 @@ its `.claude/settings.json`.
 | [observability](skills/observability) | Set up or maintain OpenTelemetry tracing plus wide-event logging in a codebase, delivered as two pull requests. Run it again later as a maintenance pass. Runs only when asked. |
 | [logging-best-practices](skills/logging-best-practices) | Logging built on wide events (canonical log lines): high-cardinality context, one logger, middleware-based setup. Runs only when asked. |
 
-### UI
+### UI and motion
 
 | Skill | What it does |
 |---|---|
 | [make-interfaces-feel-better](skills/make-interfaces-feel-better) | Refine UI consistency, typography, surfaces, icons and feedback within an existing design system. |
+| [motion-infografikk-film](skills/motion-infografikk-film) | Turn a script into an explainer or infographic motion film: one interactive HTML page with player, chapters and synced script, exported to MP4 with a sound bed. Two ready styles, Punktet and Tråden. Written in Norwegian. |
 
 ### Workflow
 
