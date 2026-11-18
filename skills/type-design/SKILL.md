@@ -107,7 +107,7 @@ For a multi-stage pipeline in a language with closed unions, see [the F# example
 - Style churn. Records, unions and pattern matching earn their place when they make intent easier to read and harder to misuse, not because the language has them.
 - An invariant that would take type-level machinery to encode. Treat these as ideals, not requirements: keep the check, and leave a comment that names the invariant for whoever changes the code next.
 
-For collaborator interfaces, adapters or brittle interaction tests, use `mock-roles-not-objects` instead: that skill covers relationships between components, this one covers internal facts and transitions.
+For collaborator interfaces, adapters or brittle interaction tests, use `collaborator-roles` instead: that skill covers relationships between components, this one covers internal facts and transitions.
 
 ## What to report
 

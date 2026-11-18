@@ -27,7 +27,7 @@ These are the common ones, not a complete list. Any smell qualifies if you can n
 3. **Name the risk for each.** Write the concrete failure: what input, timing or next change makes it go wrong, and what the user or the next developer sees. If you can't, drop the smell.
 4. **Dig deeper with the specialist skill.** When a finding falls in another skill's area, invoke that skill on the code involved and follow its procedure, rather than stopping at a pointer:
    - A missing type: repeated guards, optional fields that only some states have, flags or sentinels, a status checked in many places. Invoke `type-design`.
-   - Mocked vendor or framework types, deep mock graphs, interaction tests that mirror structure, collaborators with no clear role. Invoke `mock-roles-not-objects`.
+   - Mocked vendor or framework types, deep mock graphs, interaction tests that mirror structure, collaborators with no clear role. Invoke `collaborator-roles`.
    - Tests that can't fail, duplicate proof, test-only seams in production code. Invoke `test-audit`.
    - A race or ordering bug between users, requests, retries or events that is hard to see by reading. Invoke `statechart` to show the path to the bad state.
    - A boundary that one external change would break in several places. Invoke `residuality` for a contagion check.

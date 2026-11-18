@@ -1,6 +1,6 @@
 # Distilled principles from *Mock Roles, not Objects*
 
-Use this file when you need the paper's ideas in portable form rather than jMock-specific syntax.
+Use this file when you need the ideas of [*Mock Roles, Not Objects*](https://www.jmock.org/oopsla2004.pdf) (Freeman, Pryce, Mackinnon and Walnes, 2004) in portable form rather than jMock-specific syntax.
 
 ## What to carry forward from the paper
 

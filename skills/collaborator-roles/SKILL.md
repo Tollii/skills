@@ -1,9 +1,11 @@
 ---
-name: mock-roles-not-objects
-description: "Design app-owned collaborator roles and focused interaction tests. Use for adapters, third-party boundaries, or brittle mocks; keep value calculations under direct tests."
+name: collaborator-roles
+description: "Design the interfaces a class depends on from what it needs, and test against them with focused mocks. Use when wrapping a vendor SDK, framework or runtime API behind an interface; when writing or reviewing tests for services, handlers or orchestrators with dependencies; when mocks are brittle, deeply nested or pin call order; or when a class creates its own dependencies and is hard to test. Not for pure functions or value objects."
 ---
 
-# Mock Roles Not Objects
+# Collaborator roles
+
+Based on [*Mock Roles, Not Objects*](https://www.jmock.org/oopsla2004.pdf) by Steve Freeman, Nat Pryce, Tim Mackinnon and Joe Walnes (OOPSLA 2004).
 
 Use this skill to treat interaction testing as a design tool. Start from the object under test, identify the services it needs from immediate neighbours, and let those needs define small app-owned role interfaces. The goal is not to maximize mocks; it is to discover better seams, clearer collaborations, and tests that fail for the right reasons.
 

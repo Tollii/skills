@@ -1,0 +1,4 @@
+interface:
+  display_name: "Collaborator Roles"
+  short_description: "Design seams and interaction tests from collaborator roles"
+  default_prompt: "Use $collaborator-roles to design or review collaborator roles, seams, wrappers, and interaction tests."
