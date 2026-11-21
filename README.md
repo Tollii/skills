@@ -7,6 +7,33 @@ Skills work best per project, not loaded globally into every session. Add the on
 
 ## Install
 
+### With [APM](https://microsoft.github.io/apm/)
+
+Install APM first: `brew install apm`.
+
+**In a project.** Add `Tollii/skills` (all skills) or individual `Tollii/skills/skills/<name>` entries to `apm.yml`, then run `apm install`:
+
+```yaml
+targets:
+  - agent-skills
+  - claude
+dependencies:
+  apm:
+    - Tollii/skills#<commit sha>
+```
+
+`agent-skills` deploys to `.agents/skills/` (Copilot, Codex, Cursor, Gemini CLI, Antigravity, OpenCode and Windsurf). Leave out `claude` if `.claude/skills` already symlinks to `.agents/skills`. Commit `apm.yml`, `apm.lock.yaml`, and optionally `.agents/skills/` so skill updates appear as line-by-line diffs in pull requests. Verify with `apm audit`.
+
+**Every skill (user-wide).** Copy `user-apm.yml` and install it (trim any targets you do not use):
+
+```sh
+mkdir -p ~/.apm
+curl -fsSL -o ~/.apm/apm.yml https://raw.githubusercontent.com/Tollii/skills/main/user-apm.yml
+apm install -g
+```
+
+### Copy manually or with the skills CLI
+
 Copy a skill into a project:
 
 ```sh

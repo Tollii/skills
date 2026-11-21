@@ -1,0 +1,11 @@
+name: tollii-skills
+version: 1.0.0
+targets:
+  - agent-skills
+  - claude
+  - antigravity
+  - opencode
+dependencies:
+  apm:
+    - Tollii/skills
+  mcp: []
